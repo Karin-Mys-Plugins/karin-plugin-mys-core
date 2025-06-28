@@ -65,20 +65,16 @@
     ],
     "web": "./lib/web.config.js",
     "ts-web": "./src/web.config.ts",
-    "static": [
-      "resources"
-    ],
+    "static": [],
     "files": [
       "config",
-      "data",
-      "resources"
+      "data"
     ]
   },
   "files": [
     "/lib/**/*.js",
     "/lib/**/*.d.ts",
     "/config/*.json",
-    "resources",
     "!lib/app.js"
   ],
   "publishConfig": {
