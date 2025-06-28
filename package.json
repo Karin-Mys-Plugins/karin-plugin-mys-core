@@ -1,0 +1,88 @@
+{
+  "name": "karin-plugin-mys-core",
+  "version": "1.0.10",
+  "author": "babanbang",
+  "type": "module",
+  "description": "karin-plugin-mys-core",
+  "homepage": "https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core",
+  "bugs": {
+    "url": "https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core.git"
+  },
+  "scripts": {
+    "app": "node lib/app.js",
+    "build": "tsup",
+    "dev": "cross-env EBV_FILE=\"development.env\" node --import tsx src/app.ts",
+    "pub": "npm publish --access public"
+  },
+  "exports": {
+    "./types": {
+      "types": "./lib/exports/types.d.ts",
+      "development": "./src/exports/types.ts",
+      "default": "./lib/exports/types.js"
+    },
+    "./database": {
+      "types": "./lib/exports/database.d.ts",
+      "development": "./src/exports/database.ts",
+      "default": "./lib/exports/database.js"
+    },
+    "./core": {
+      "types": "./lib/exports/core.d.ts",
+      "development": "./src/exports/core.ts",
+      "default": "./lib/exports/core.js"
+    }
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "md5": "^2.3.0",
+    "qrcode": "^1.5.4",
+    "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/lodash": "^4.17.19",
+    "@types/md5": "^2.3.5",
+    "@types/node": "20.19.0",
+    "@types/qrcode": "^1.5.5",
+    "cross-env": "^7.0.3",
+    "eslint": "^9.29.0",
+    "neostandard": "^0.11.9",
+    "node-karin": "^1.10.10",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  },
+  "karin": {
+    "main": "src/index.ts",
+    "apps": [
+      "lib/apps"
+    ],
+    "ts-apps": [
+      "src/apps"
+    ],
+    "web": "./lib/web.config.js",
+    "ts-web": "./src/web.config.ts",
+    "static": [
+      "resources"
+    ],
+    "files": [
+      "config",
+      "data",
+      "resources"
+    ]
+  },
+  "files": [
+    "/lib/**/*.js",
+    "/lib/**/*.d.ts",
+    "/config/*.json",
+    "resources",
+    "!lib/app.js"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  }
+}
