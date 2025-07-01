@@ -1,5 +1,5 @@
 export interface RefreshUidData {
-  data: { [key: string]: string[] }
+  data: { [key: string]: {} }
   names: { [key: string]: string }
 }
 

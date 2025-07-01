@@ -183,27 +183,18 @@ const bingCookie = async (userId: string, cookie: string, Serv: MysAccountType =
 
   const userInfo = await UserInfo.create(userId)
   await userInfo.saveUserInfo({
-    userId,
-    ...uidList.uids.data,
-    ltuids: lodash.uniq([...userInfo.ltuids, cookieParams.ltuid]),
-    stuids: userInfo.stuids,
-    deviceList: userInfo.deviceList,
+    ...uidList.uids.data, ltuids: lodash.uniq([...userInfo.ltuids, cookieParams.ltuid]),
   })
 
-  const ltuidInfo = userInfo.getLtuidInfo(cookieParams.ltuid)
-  await userInfo.saveMysAccountInfo({
-    ltuid: cookieParams.ltuid,
-    type: uidList.Serv,
-    cookie: common.ObjToStr(cookieParams, ';'),
-    stoken: ltuidInfo?.stoken || '',
-    deviceId: ltuidInfo?.deviceId || ''
+  await userInfo.saveMysAccountInfo(cookieParams.ltuid, {
+    type: uidList.Serv, cookie: common.ObjToStr(cookieParams, ';'),
   })
 
   logger.mark(`[${userId}] 保存Cookie成功 [ltuid:${cookieParams.ltuid}]`)
 
   const sendMsg: string[] = []
   lodash.forEach(uidList.uids.data, (uids, game) => {
-    sendMsg.push(`【${uidList.uids.names[game]}】：${uids.join('、')}`)
+    sendMsg.push(`【${uidList.uids.names[game]}】：${Object.keys(uids).join('、')}`)
   })
 
   return `Cookie绑定成功！\n${sendMsg.join('\n')}`
@@ -238,19 +229,11 @@ const bingStoken = async (userId: string, stoken: string, option?: { cookie: str
 
   const userInfo = await UserInfo.create(userId)
   await userInfo.saveUserInfo({
-    userId,
-    ltuids: userInfo.ltuids,
     stuids: lodash.uniq([...userInfo.stuids, stokenParams.stuid]),
-    deviceList: userInfo.deviceList,
   })
 
-  const ltuidInfo = userInfo.getLtuidInfo(stokenParams.stuid)
-  await userInfo.saveMysAccountInfo({
-    ltuid: stokenParams.stuid,
-    type: updata.Serv,
-    cookie: ltuidInfo?.cookie || '',
-    stoken: Stoken,
-    deviceId: ltuidInfo?.deviceId || ''
+  await userInfo.saveMysAccountInfo(stokenParams.stuid, {
+    type: updata.Serv, stoken: Stoken
   })
 
   logger.mark(`[${userId}] 保存Stoken成功 [stuid: ${stokenParams.stuid}]`)

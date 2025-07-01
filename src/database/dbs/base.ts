@@ -5,11 +5,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { Model, ModelStatic } from 'sequelize'
 
-export class DbBase<T extends Record<string, any>> {
+export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   declare model: ModelStatic<Model>
 
   declare databasePath: string
-  declare databaseType: DatabaseType
+  declare databaseType: D
 
   declare modelName: string
   declare modelSchema: ModelAttributes<Model>
@@ -35,19 +35,19 @@ export class DbBase<T extends Record<string, any>> {
     return path.join(this.databasePath, `${pk}.json`)
   }
 
-  readSync (path: string, pk: string): DatabaseReturn<T> {
-    const result: DatabaseReturn<T> = json.readSync(path)
-    result._save = this.saveFile(pk)
+  readSync (path: string, pk: string): DatabaseReturn<T>[DatabaseType.File] {
+    const result: DatabaseReturn<T>[D] = json.readSync(path)
+    result.save = this.saveFile(pk)
 
     return result
   }
 
-  readDirSync (pk: string): DatabaseReturn<T> {
+  readDirSync (pk: string): DatabaseReturn<T>[DatabaseType.Dir] {
     const path = this.userPath(pk)
     const files = fs.readdirSync(path)
 
     const result: Record<string, any> = {
-      _save: this.saveDir(pk),
+      save: this.saveDir(pk),
       [this.model.primaryKeyAttribute]: pk
     }
     const filePromises = files.map(async (file) => {
@@ -59,18 +59,7 @@ export class DbBase<T extends Record<string, any>> {
       logger.error(err)
     })
 
-    return result as DatabaseReturn<T>
-  }
-
-  writeFileSync (pk: string, data: Record<string, any>) {
-    const defData = this.schemaToJSON(pk)
-    for (const key in data) {
-      !(key in defData) && delete data[key]
-    }
-
-    json.writeSync(this.userPath(pk), lodash.merge({}, defData, data))
-
-    return true
+    return result as DatabaseReturn<T>[D]
   }
 
   writeDirSync (pk: string, data: Record<string, any>) {
@@ -88,32 +77,39 @@ export class DbBase<T extends Record<string, any>> {
     return true
   }
 
-  saveFile (pk: string): (data: T) => Promise<void> {
-    return async (data: T) => {
+  saveFile (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.File]> {
+    return async (data: Partial<T>) => {
       delete data[this.model.primaryKeyAttribute]
 
-      this.writeFileSync(pk, data)
+      const defData = this.schemaToJSON(pk)
+      const userPath = this.userPath(pk)
+
+      json.writeSync(userPath, lodash.merge({}, defData, data))
+
+      return this.readSync(userPath, pk)
     }
   }
 
-  saveDir (pk: string): (data: T) => Promise<void> {
-    return async (data: T) => {
+  saveDir (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.Dir]> {
+    return async (data: Partial<T>) => {
       delete data[this.model.primaryKeyAttribute]
 
       this.writeDirSync(pk, data)
+
+      return this.readDirSync(pk)
     }
   }
 
-  saveSql (model: Model<any, any>, pk: string): (data: T) => Promise<void> {
-    return async (data: T) => {
+  saveSql (model: Model<any, any>, pk: string): (data: Partial<T>) => Promise<DatabaseReturn<T>[DatabaseType.Db]> {
+    return async (data: Partial<T>) => {
       delete data[this.model.primaryKeyAttribute]
 
-      const Attributes = this.schemaToJSON(pk)
-      for (const key in data) {
-        !(key in Attributes) && delete data[key]
-      }
+      const result = await model.update(data)
 
-      await model.update(data)
+      return {
+        ...result.toJSON<T>(),
+        save: this.saveSql(result, pk)
+      }
     }
   }
 }

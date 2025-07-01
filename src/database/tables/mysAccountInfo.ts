@@ -2,7 +2,7 @@ import { dir } from '@/dir'
 import { DatabaseType, MysAccountInfoType, MysAccountType } from '@/types'
 import { Database } from '../database'
 
-const DB = Database.get<MysAccountInfoType>()
+const DB = Database.get<MysAccountInfoType, DatabaseType.Db>()
 
 export const MysAccountInfoDB = await DB.init(
   dir.DataDir,

@@ -12,7 +12,7 @@ const sequelize = new Sequelize({
   storage: path.join(dir.DataDir, 'database', 'sqlite3.db'), dialect, logging: false
 })
 
-export class Sqlite3<T extends Record<string, any>> extends DbBase<T> implements DatabaseClassInstance<T> {
+export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> extends DbBase<T, D> implements DatabaseClassInstance<T, D> {
   dialect = dialect
 
   async check (): Promise<boolean> {
@@ -25,7 +25,7 @@ export class Sqlite3<T extends Record<string, any>> extends DbBase<T> implements
     }
   }
 
-  async init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model>, type: DatabaseType): Promise<DatabaseClassInstance<T>> {
+  async init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model>, type: D): Promise<DatabaseClassInstance<T, D>> {
     this.databaseType = type
     this.databasePath = path.join(DataDir, modelName)
     if (type !== DatabaseType.Db) {
@@ -59,9 +59,9 @@ export class Sqlite3<T extends Record<string, any>> extends DbBase<T> implements
     return this
   }
 
-  async findByPk (pk: string, create: true): Promise<DatabaseReturn<T>>
-  async findByPk (pk: string, create?: false): Promise<DatabaseReturn<T> | undefined>
-  async findByPk (pk: string, create: boolean = false): Promise<DatabaseReturn<T> | undefined> {
+  async findByPk (pk: string, create: true): Promise<DatabaseReturn<T>[D]>
+  async findByPk (pk: string, create?: false): Promise<DatabaseReturn<T>[D] | undefined>
+  async findByPk (pk: string, create: boolean = false): Promise<DatabaseReturn<T>[D] | undefined> {
     if (this.databaseType !== DatabaseType.Db) {
       const path = this.userPath(pk)
       if (!fs.existsSync(path)) {
@@ -70,12 +70,16 @@ export class Sqlite3<T extends Record<string, any>> extends DbBase<T> implements
           if (this.databaseType === DatabaseType.Dir) {
             fs.mkdirSync(path)
             this.writeDirSync(pk, data)
+
+            return {
+              ...data, save: this.saveDir(pk)
+            } as DatabaseReturn<T>[D]
           } else {
             json.writeSync(path, data)
-          }
 
-          return {
-            ...data, _save: this.saveFile(pk)
+            return {
+              ...data, save: this.saveFile(pk)
+            } as DatabaseReturn<T>[D]
           }
         }
 
@@ -83,9 +87,9 @@ export class Sqlite3<T extends Record<string, any>> extends DbBase<T> implements
       }
 
       if (this.databaseType === DatabaseType.Dir) {
-        return this.readDirSync(pk)
+        return this.readDirSync(pk) as DatabaseReturn<T>[D]
       } else {
-        return this.readSync(path, pk)
+        return this.readSync(path, pk) as DatabaseReturn<T>[D]
       }
     } else {
       let result = await this.model.findByPk(pk)
@@ -96,21 +100,21 @@ export class Sqlite3<T extends Record<string, any>> extends DbBase<T> implements
 
       return {
         ...result.toJSON<T>(),
-        _save: this.saveSql(result, pk)
+        save: this.saveSql(result, pk)
       }
     }
   }
 
-  async findAllByPks (pks: string[]): Promise<DatabaseReturn<T>[]> {
+  async findAllByPks (pks: string[]): Promise<DatabaseReturn<T>[D][]> {
     if (this.databaseType !== DatabaseType.Db) {
-      const result: DatabaseReturn<T>[] = []
+      const result: DatabaseReturn<T>[D][] = []
       pks.forEach((pk) => {
         const path = this.userPath(pk)
         if (fs.existsSync(path)) {
           if (this.databaseType === DatabaseType.Dir) {
-            result.push(this.readDirSync(pk))
+            result.push(this.readDirSync(pk) as DatabaseReturn<T>[D])
           } else {
-            result.push(this.readSync(path, pk))
+            result.push(this.readSync(path, pk) as DatabaseReturn<T>[D])
           }
         }
       })
@@ -124,7 +128,7 @@ export class Sqlite3<T extends Record<string, any>> extends DbBase<T> implements
       })
       return result.map((item) => ({
         ...item.toJSON<T>(),
-        _save: this.saveSql(item, item[this.model.primaryKeyAttribute as keyof Model<any, any>])
+        save: this.saveSql(item, item[this.model.primaryKeyAttribute as keyof Model<any, any>])
       }))
     }
   }

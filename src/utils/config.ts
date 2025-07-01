@@ -1,34 +1,66 @@
 import { dir } from '@/dir'
-import { Config } from '@/types/utils'
+import { CommandItem, ConfigType, CoreCommand } from '@/types'
 import {
-  copyConfigSync,
+  existsSync,
   logger,
   requireFileSync,
   watch,
   writeJsonSync
 } from 'node-karin'
 import lodash from 'node-karin/lodash'
+import path from 'node:path'
 
-export const Cfg = new class Cfg {
-  #configCache: Config | null = null
+const DefaultConfig: ConfigType = {
+  device: {
+    deviceName: '',
+    deviceBoard: '',
+    deviceModel: '',
+    androidVersion: '',
+    deviceFingerprint: '',
+    deviceProduct: ''
+  },
+  commands: {
+    [CoreCommand.BingMysDevice]: {
+      cmds: [], end: true, flags: ''
+    }
+  }
+}
 
-  constructor () {
-    copyConfigSync(dir.defConfigDir, dir.ConfigDir, ['.json'])
+const ConfigPath = path.join(dir.ConfigDir, 'config.json')
+
+export class Config<C extends Record<string, any>> {
+  /**
+   * @description 配置文件路径
+   */
+  #ConfigPath: string
+  /**
+   * @description 默认配置(只读)
+   */
+  #DefaultConfig: Readonly<C>
+  /**
+   * @description 配置缓存
+   */
+  #configCache: C | null = null
+
+  constructor (ConfigPath: string, DefaultConfig: C) {
+    this.#ConfigPath = ConfigPath
+    this.#DefaultConfig = Object.freeze(DefaultConfig)
+
+    !existsSync(this.#ConfigPath) && writeJsonSync(this.#ConfigPath, this.#DefaultConfig)
 
     this.loadConfig()
 
-    watch(`${dir.ConfigDir}/config.json`, () => {
+    watch(this.#ConfigPath, () => {
       logger.info('配置文件已修改，重新加载配置')
       this.loadConfig()
     })
   }
 
-  loadConfig (): Config {
-    const cfg = requireFileSync(`${dir.ConfigDir}/config.json`)
-    const def = requireFileSync(`${dir.defConfigDir}/config.json`)
+  loadConfig (): C {
+    const config = requireFileSync(this.#ConfigPath)
 
     // 检查并补全缺失的配置项
-    const mergedConfig = this.mergeWithDefaults(cfg, def)
+    const mergedConfig = this.mergeWithDefaults(config, this.#DefaultConfig)
 
     // 更新缓存
     this.#configCache = mergedConfig
@@ -36,28 +68,51 @@ export const Cfg = new class Cfg {
     return mergedConfig
   }
 
-  mergeWithDefaults (userConfig: Record<string, any>, defaultConfig: Record<string, any>): Config {
-    const result = lodash.merge({}, defaultConfig, userConfig)
+  mergeWithDefaults (userConfig: Record<string, any>, defaultConfig: Record<string, any>): C {
+    // 递归函数，用于过滤掉用户配置中不存在于默认配置的字段
+    const filterUserConfig = (user: any, defaults: any): any => {
+      if (lodash.isPlainObject(user) && lodash.isPlainObject(defaults)) {
+        const filtered: Record<string, any> = {}
+        for (const key in defaults) {
+          if (Object.prototype.hasOwnProperty.call(user, key)) {
+            filtered[key] = filterUserConfig(user[key], defaults[key])
+          }
+        }
+        return filtered
+      }
+      return user
+    }
+
+    // 先过滤用户配置，只保留默认配置中定义的字段
+    const filteredUserConfig = filterUserConfig(userConfig, defaultConfig)
+
+    // 然后合并配置
+    const result = lodash.merge({}, defaultConfig, filteredUserConfig)
 
     if (!lodash.isEqual(result, userConfig)) {
       try {
-        writeJsonSync(`${dir.ConfigDir}/config.json`, result)
+        writeJsonSync(this.#ConfigPath, result)
       } catch (err) {
         logger.error(err)
       }
     }
 
-    return result
+    return result as C
   }
 
   /**
-   *
-   * @param path 配置路径
-   * @template T 配置类型
+ * @description 获取配置路径对应的默认配置
+ */
+  getDef<T> (path: string) {
+    const defConfig = JSON.parse(JSON.stringify(this.#DefaultConfig))
+
+    return lodash.get(defConfig, path) as T
+  }
+
+  /**
    * @description 获取配置路径对应的配置
-   * @returns
    */
-  get<T> (path: string, isArray: false): T
+  get<T> (path: string, isArray?: false): T
   get<T> (path: string, isArray: true): EnhancedArray<T>
   get<T> (path: string, isArray: boolean = false): T | EnhancedArray<T> {
     const conf = JSON.parse(JSON.stringify(this.#configCache))
@@ -87,7 +142,18 @@ export const Cfg = new class Cfg {
       logger.error(err)
     }
   }
-}()
+
+  /**
+   * @description 获取触发指令正则表达式
+   */
+  getCommand (cmd: CoreCommand): RegExp {
+    const command = this.get<CommandItem>(`commands.${cmd}`)
+
+    return new RegExp(`^(${command.cmds.join('|')})${command.end ? '$' : ''}`, command.flags)
+  }
+}
+
+export const Cfg = new Config(ConfigPath, DefaultConfig)
 
 class EnhancedArray<T> extends Array<T> {
   #keyPath: string
@@ -98,6 +164,10 @@ class EnhancedArray<T> extends Array<T> {
   }
 
   add (element: T): this {
+    if (this.some(item => lodash.isEqual(item, element))) {
+      return this
+    }
+
     this.push(element)
     Cfg.set<T[]>(this.#keyPath, this.slice())
 

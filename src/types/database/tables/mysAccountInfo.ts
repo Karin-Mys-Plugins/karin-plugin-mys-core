@@ -3,8 +3,8 @@ export interface MysAccountInfoType {
   type: MysAccountType
   cookie: string
   stoken: string
-  /** 绑定的设备ID */
-  deviceId: string
+  /** 绑定的设备md5 */
+  deviceMd5: string
 }
 
 export const enum MysAccountType {

@@ -1,5 +1,5 @@
-import { MysAccountInfoDB, MysUserInfoDB } from '@/database'
-import { BaseltuidInfo, BaseUserInfoType, DatabaseReturn, MysAccountInfoType, MysAccountType, RefreshUidData, StokenParms } from '@/types'
+import { MysAccountInfoDB, MysDeviceInfoDB, MysUserInfoDB } from '@/database'
+import { BaseltuidInfo, BaseUserInfoType, DatabaseReturn, DatabaseType, MysAccountInfoType, MysAccountType, RefreshUidData, StokenParms } from '@/types'
 import { getCookieTokenBySToken, getUserGameRolesByCookie } from '../api'
 
 export class BaseUserInfo<U extends BaseUserInfoType> {
@@ -9,8 +9,8 @@ export class BaseUserInfo<U extends BaseUserInfoType> {
   #stuids: BaseUserInfoType['stuids'] = []
   #deviceList: BaseUserInfoType['deviceList'] = []
 
-  declare UserInfo: DatabaseReturn<BaseUserInfoType>
-  #ltuidMap = new Map<string, DatabaseReturn<MysAccountInfoType>>()
+  declare UserInfo: DatabaseReturn<BaseUserInfoType>[DatabaseType.Db]
+  #ltuidMap = new Map<string, DatabaseReturn<MysAccountInfoType>[DatabaseType.Db]>()
 
   declare refresh: () => Promise<this>
 
@@ -30,7 +30,7 @@ export class BaseUserInfo<U extends BaseUserInfoType> {
     return [...this.#deviceList]
   }
 
-  async initMysAccountInfo (UserInfo: DatabaseReturn<BaseUserInfoType>) {
+  async initMysAccountInfo (UserInfo: DatabaseReturn<BaseUserInfoType>[DatabaseType.Db]) {
     this.UserInfo = UserInfo
     const { ltuids, stuids } = UserInfo
 
@@ -50,18 +50,26 @@ export class BaseUserInfo<U extends BaseUserInfoType> {
     return Object.freeze(this.#ltuidMap.get(ltuid))
   }
 
-  async saveUserInfo (data: U) {
-    await this.UserInfo._save(data)
+  getLtuidInfoList () {
+    return Array.from(this.#ltuidMap.values()).map(info => Object.freeze(info))
   }
 
-  async saveMysAccountInfo (data: MysAccountInfoType) {
-    let MysAccountInfo = this.#ltuidMap.get(data.ltuid)
+  async getDeviceList () {
+    return await MysDeviceInfoDB.findAllByPks(this.#deviceList)
+  }
+
+  async saveUserInfo (data: Partial<U>) {
+    await this.UserInfo.save(data)
+  }
+
+  async saveMysAccountInfo (ltuid: string, data: Partial<MysAccountInfoType>) {
+    let MysAccountInfo = this.#ltuidMap.get(ltuid)
     if (!MysAccountInfo) {
-      MysAccountInfo = await MysAccountInfoDB.findByPk(data.ltuid, true)
+      MysAccountInfo = await MysAccountInfoDB.findByPk(ltuid, true)
     }
 
-    await MysAccountInfo._save(data)
-    this.#ltuidMap.set(data.ltuid, { ...MysAccountInfo, ...data })
+    await MysAccountInfo.save(data)
+    this.#ltuidMap.set(ltuid, { ...MysAccountInfo, ...data })
   }
 }
 

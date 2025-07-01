@@ -2,7 +2,7 @@ import { dir } from '@/dir'
 import { BaseUserInfoType, DatabaseType } from '@/types'
 import { Database } from '../database'
 
-const DB = Database.get<BaseUserInfoType>()
+const DB = Database.get<BaseUserInfoType, DatabaseType.Db>()
 
 export const BaseMysUserInfoSchema = {
   userId: Database.PkColumn('STRING'),

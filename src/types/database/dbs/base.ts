@@ -24,18 +24,26 @@ export type ModelAttributes<M extends Model = Model, TAttributes = any> = {
   [name in keyof TAttributes]: ModelAttributeColumnOptions<M>
 }
 
-export type DatabaseReturn<T> = T & {
-  _save: (data: T) => Promise<void>
+export interface DatabaseReturn<T> {
+  [DatabaseType.Db]: T & {
+    save: (data: Partial<T>) => Promise<DatabaseReturn<T>[DatabaseType.Db]>
+  }
+  [DatabaseType.File]: T & {
+    save: (data: T) => Promise<DatabaseReturn<T>[DatabaseType.File]>
+  }
+  [DatabaseType.Dir]: T & {
+    save: (data: T) => Promise<DatabaseReturn<T>[DatabaseType.Dir]>
+  }
 }
 
-export type DatabaseClassInstance<T extends Record<string, any>> = {
+export type DatabaseClassInstance<T extends Record<string, any>, D extends DatabaseType> = {
   /** 数据库标识 */
   dialect: Dialect
 
   model: ModelStatic<Model>
 
   databasePath: string
-  databaseType: DatabaseType
+  databaseType: D
 
   /** 表名 */
   modelName: string
@@ -53,7 +61,7 @@ export type DatabaseClassInstance<T extends Record<string, any>> = {
    * @param modelSchema 表定义
    * @param type 数据库类型
    */
-  init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model>, type: DatabaseType): Promise<DatabaseClassInstance<T>>
+  init (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, type: D): Promise<DatabaseClassInstance<T, D>>
 
   /** 将表定义转换为 JSON 对象 */
   schemaToJSON (pk: string): T
@@ -62,34 +70,31 @@ export type DatabaseClassInstance<T extends Record<string, any>> = {
   userPath (pk: string): string
 
   /** 根据主键读取用户数据文件 */
-  readSync (path: string, pk: string): DatabaseReturn<T>
+  readSync (path: string, pk: string): DatabaseReturn<T>[DatabaseType.File]
 
   /** 根据主键读取用户数据目录 */
-  readDirSync (pk: string): DatabaseReturn<T>
-
-  /** 写入用户数据文件 */
-  writeFileSync (pk: string, data: Record<string, any>): boolean
+  readDirSync (pk: string): DatabaseReturn<T>[DatabaseType.Dir]
 
   /** 写入用户数据目录 */
   writeDirSync (pk: string, data: Record<string, any>): boolean
 
   /** 保存用户数据到文件 */
-  saveFile (pk: string): (data: T) => Promise<void>
+  saveFile (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.File]>
 
   /** 保存用户数据到目录 */
-  saveDir (pk: string): (data: T) => Promise<void>
+  saveDir (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.Dir]>
 
   /** 保存用户数据到 SQL 数据库 */
-  saveSql (model: Model<any, any>, pk: string): (data: T) => Promise<void>
+  saveSql (model: Model<any, any>, pk: string): (data: Partial<T>) => Promise<DatabaseReturn<T>[DatabaseType.Db]>
 
   /** 根据主键查找或创建用户数据 */
-  findByPk (pk: string, create: true): Promise<DatabaseReturn<T>>
+  findByPk (pk: string, create: true): Promise<DatabaseReturn<T>[D]>
 
   /** 根据主键查找用户数据 */
-  findByPk (pk: string, create: boolean): Promise<DatabaseReturn<T> | undefined>
+  findByPk (pk: string, create?: boolean): Promise<DatabaseReturn<T>[D] | undefined>
 
   /** 根据主键数组查找用户数据 */
-  findAllByPks (pks: string[]): Promise<DatabaseReturn<T>[]>
+  findAllByPks (pks: string[]): Promise<DatabaseReturn<T>[D][]>
 
   /** 删除用户数据 */
   destroy (pk: string): Promise<boolean>
