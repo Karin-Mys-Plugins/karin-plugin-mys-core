@@ -1,9 +1,11 @@
-import { BaseMysRes, DeviceInfo, MysAccountType, MysApiInfoFn, UidInfo } from '@/types'
-import { common } from '@/utils'
+import { BaseMysRes, DeviceConfig, MysAccountType, MysApiInfoFn, MysDeviceInfoItem, UidInfo } from '@/types'
+import { Cfg, common } from '@/utils'
 import md5 from 'md5'
-import { logger } from 'node-karin'
+import { logger, redis } from 'node-karin'
 import axios, { AxiosHeaders, AxiosRequestConfig } from 'node-karin/axios'
 import lodash from 'node-karin/lodash'
+import { DeviceInfo } from '../user'
+import { getDeviceFp } from './mysApis'
 import { MysApp } from './mysApp'
 
 export class DefineMysApi<
@@ -14,12 +16,19 @@ export class DefineMysApi<
 
   #apiInfo: MysApiInfoFn<R, D>
 
-  declare Device: DeviceInfo
+  declare Device: MysDeviceInfoItem & {
+    id: string
+    /** @description 重要参数 */
+    brand: string
+    display: string
+  }
+
+  declare DeviceFp: string
 
   #needDeviceFp: boolean = false
   #needCheckCode: boolean = false
 
-  constructor (apiInfo: MysApiInfoFn<R, D>, uidInfo?: UidInfo, opt: { deviceFp?: boolean, checkCode?: boolean } = {}) {
+  constructor (apiInfo: MysApiInfoFn<R, D>, uidInfo?: Partial<UidInfo>, opt: { deviceFp?: boolean, checkCode?: boolean } = {}) {
     this.#apiInfo = apiInfo
 
     this.uidInfo = uidInfo as UidInfo
@@ -47,12 +56,38 @@ export class DefineMysApi<
   async getDevice () {
     if (this.Device) return this.Device
 
+    const defDevice = Cfg.get<DeviceConfig>('device')
+    const DbDevice = await DeviceInfo.get(this.uidInfo.deviceMd5)
+
+    const uuid = crypto.randomUUID()
+    const fingerprint = DbDevice?.fingerprint || defDevice.deviceFingerprint
+
     this.Device = {
-      id: common.getDeviceGuid(),
-      name: `Karin-${common.randomString(8, 'All')}`
+      id: DbDevice?.deviceId || uuid,
+      name: DbDevice?.name || defDevice.deviceName,
+      board: DbDevice?.board || defDevice.deviceBoard,
+      model: DbDevice?.model || defDevice.deviceModel,
+      oaid: DbDevice?.oaid || uuid,
+      androidVersion: DbDevice?.androidVersion || defDevice.androidVersion,
+      fingerprint,
+      product: DbDevice?.product || defDevice.deviceProduct,
+      brand: fingerprint.split('/')[0],
+      display: fingerprint.split('/')[3]
     }
 
-    return this.Device
+    this.DeviceFp = DbDevice?.deviceFp || await redis.get(`karin-piugin-mya-core:deviceFp:${this.uidInfo.ltuid}`) || ''
+
+    return {
+      device: this.Device,
+      deviceFp: this.DeviceFp
+    }
+  }
+
+  setDevice (device: MysDeviceInfoItem & { id: string, brand: string, display: string }, deviceFp?: string) {
+    this.Device = device
+    this.DeviceFp = deviceFp || ''
+
+    return this
   }
 
   async request (data: D, checkCode: boolean = true): Promise<R> {
@@ -63,7 +98,16 @@ export class DefineMysApi<
     }, data))
 
     if (this.#needDeviceFp) {
-      Headers.set()
+      if (!this.DeviceFp) {
+        const res = await getDeviceFp().request({})
+        if (res.data?.device_fp) {
+          this.DeviceFp = res.data.device_fp
+          await redis.setEx(`karin-piugin-mya-core:deviceFp:${this.uidInfo.ltuid}`, 60 * 60 * 8, res.data.device_fp)
+        }
+      }
+
+      Headers.set('x-rpc-device_id', this.Device.id)
+      Headers.set('x-rpc-device_fp', this.DeviceFp)
     }
 
     const params: AxiosRequestConfig = {
@@ -85,14 +129,14 @@ export class DefineMysApi<
         response = axios.request(params)
       }
     } catch (err) {
-      logger.debug(`mys-core-requst[${logger.green(`${Date.now() - start}ms`)}]: ${JSON.stringify(params, null, 2)}`)
+      logger.debug(`mys-core-requst-error[${logger.green(`${Date.now() - start}ms`)}]: ${JSON.stringify(params, null, 2)}`)
 
       return response
     }
 
     const res = response.data
 
-    logger.debug(`mys-core-requst[${logger.green(`${Date.now() - start}ms`)}]: ${JSON.stringify(params, null, 2)} -> ${JSON.stringify(res, null, 2)}`)
+    logger.debug(`mys-core-requst-success[${logger.green(`${Date.now() - start}ms`)}]: ${JSON.stringify(params, null, 2)} -> ${JSON.stringify(res, null, 2)}`)
 
     if (!res) {
       return undefined as R
@@ -110,7 +154,62 @@ export class DefineMysApi<
   }
 
   async checkRetCode (res: R, data?: D, validate: boolean = true): Promise<R> {
-    return res
+    const result = res!
+    const err = (msg: string) => {
+      if (!result.error) {
+        result.error = []
+      }
+      result.error.push(msg)
+    }
+
+    switch (result.retcode) {
+      case 0:
+      case -1002: // 伙伴不存在~
+        break
+      case -1:
+      case -100:
+      case 1001:
+      case 10001:
+      case 10103:
+        if (/(登录|login)/i.test(result.message)) {
+          logger.mark(`karin-plugin-mys-core: [cookie失效][uid: ${this.uidInfo.uid}][userId:${this.uidInfo.userId}]`)
+          err(`UID:${this.uidInfo.uid}，米游社Cookie已失效，请【#刷新Cookie】或重新绑定。`)
+        } else {
+          err(`UID:${this.uidInfo.uid}米游社查询失败，请稍后再试`)
+        }
+        break
+      case 10102:
+        if (result.message === 'Data is not public for the user') {
+          err(`UID:${this.uidInfo.uid}，米游社数据未公开`)
+        } else {
+          err(`UID:${this.uidInfo.uid}，请先去米游社绑定角色`)
+        }
+        break
+      case 1008:
+        err(`UID:${this.uidInfo.uid}，请先去米游社绑定角色`)
+        break
+      case 10101:
+        err(`UID:${this.uidInfo.uid}，查询已达今日上限`)
+        break
+      case 5003:
+      case 10041:
+        logger.mark(`karin-plugin-mys-core: [UID:${this.uidInfo.uid}][userId:${this.uidInfo.userId}] 账号异常`)
+        err(`UID:${this.uidInfo.uid}，账号异常，请绑定设备后查询。`)
+        break
+      case 1034:
+      case 10035:
+        logger.mark(`karin-plugin-mys-core: [UID:${this.uidInfo.uid}][userId:${this.uidInfo.userId}] 遇到验证码`)
+        err(`UID:${this.uidInfo.uid}，遇到验证码，请绑定设备后查询。`)
+        break
+      case 10307:
+        err(`UID:${this.uidInfo.uid}，版本更新期间，数据维护中`)
+        break
+      default:
+        err(`UID:${this.uidInfo.uid}，米游社接口报错，暂时无法查询：${result.message || 'unknow error'}`)
+        break
+    }
+
+    return result
   }
 
   getDS1 (saltKey: keyof typeof MysApp.salt, query: string = '', body: string = '') {
@@ -161,5 +260,12 @@ export class DefineMysApi<
   CookieHeaders = (options: { query?: string, body?: any } = {}) => ({
     Cookie: this.uidInfo.cookie!,
     ...(this[this.isHoyolab ? 'BaseOsHeaders' : 'BaseCnHeaders']())
+  })
+
+  OkHttpHeaders = (options: { query?: string, body?: any } = {}) => ({
+    'User-Agent': 'okhttp/4.9.3',
+    Connection: 'Keep-Alive',
+    'Accept-Encoding': 'gzip',
+    'Content-Type': 'application/json',
   })
 }

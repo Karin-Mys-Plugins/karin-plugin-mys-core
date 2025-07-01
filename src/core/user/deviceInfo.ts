@@ -1,5 +1,5 @@
 import { MysDeviceInfoDB } from '@/database'
-import { BaseUserInfoType, MysDeviceInfoItem } from '@/types'
+import { BaseUserInfoType, MysDeviceInfoIdFp, MysDeviceInfoItem } from '@/types'
 import md5 from 'md5'
 import lodash from 'node-karin/lodash'
 import { BaseUserInfo } from './userInfo'
@@ -9,7 +9,7 @@ export class DeviceInfo {
     return await MysDeviceInfoDB.findByPk(Md5)
   }
 
-  static async create (UserInfo: BaseUserInfo<BaseUserInfoType>, deviceInfo: Partial<MysDeviceInfoItem>) {
+  static async create (UserInfo: BaseUserInfo<BaseUserInfoType>, deviceInfo: Partial<MysDeviceInfoItem & MysDeviceInfoIdFp>) {
     const deviceMd5 = md5([
       UserInfo.userId,
       deviceInfo.deviceId || '',

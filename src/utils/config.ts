@@ -21,7 +21,7 @@ const DefaultConfig: ConfigType = {
   },
   commands: {
     [CoreCommand.BingMysDevice]: {
-      cmds: [], end: true, flags: ''
+      cmds: ['#绑定设备', '#绑定米游社设备'], default: true, end: true, flags: false
     }
   }
 }
@@ -51,7 +51,6 @@ export class Config<C extends Record<string, any>> {
     this.loadConfig()
 
     watch(this.#ConfigPath, () => {
-      logger.info('配置文件已修改，重新加载配置')
       this.loadConfig()
     })
   }
@@ -130,14 +129,21 @@ export class Config<C extends Record<string, any>> {
     return result as T
   }
 
-  set<T> (path: string, value: T): void {
-    const conf = JSON.parse(JSON.stringify(this.#configCache))
+  /**
+   * @param save 是否立即保存
+   */
+  set<T> (path: string, value: T, save: boolean): void {
+    lodash.set(this.#configCache!, path, value)
 
-    lodash.set(conf, path, value)
-    this.#configCache = conf
+    save && this.save()
+  }
 
+  /**
+   * @description 立即保存配置
+   */
+  save () {
     try {
-      writeJsonSync(`${dir.ConfigDir}/config.json`, conf)
+      writeJsonSync(this.#ConfigPath, this.#configCache)
     } catch (err) {
       logger.error(err)
     }
@@ -149,32 +155,64 @@ export class Config<C extends Record<string, any>> {
   getCommand (cmd: CoreCommand): RegExp {
     const command = this.get<CommandItem>(`commands.${cmd}`)
 
-    return new RegExp(`^(${command.cmds.join('|')})${command.end ? '$' : ''}`, command.flags)
+    return new RegExp(`^(${command.cmds.join('|')})${command.end ? '$' : ''}`, command.flags ? 'i' : undefined)
   }
 }
 
 export const Cfg = new Config(ConfigPath, DefaultConfig)
 
-class EnhancedArray<T> extends Array<T> {
+export class EnhancedArray<T> extends Array<T> {
   #keyPath: string
 
   constructor (items: T[], path: string) {
-    super(...items)
+    super()
+
+    Object.setPrototypeOf(this, EnhancedArray.prototype)
+    if (Array.isArray(items)) {
+      this.push(...items)
+    }
+
     this.#keyPath = path
   }
 
-  add (element: T): this {
-    if (this.some(item => lodash.isEqual(item, element))) {
+  /**
+   * @param isEqual 是否不添加重复元素
+   * @param save 是否立即保存
+   */
+  add (element: T, isEqual: boolean, save: boolean): this {
+    if (isEqual && this.some(item => lodash.isEqual(item, element))) {
       return this
     }
 
     this.push(element)
-    Cfg.set<T[]>(this.#keyPath, this.slice())
+    Cfg.set<T[]>(this.#keyPath, this.slice(), save)
 
     return this
   }
 
-  remove (predicate: T | ((item: T) => boolean), isIndex: boolean = false): this {
+  /**
+   * @param isEqual 是否不添加重复元素
+   * @param save 是否立即保存
+   */
+  addSome (elements: T[], isEqual: boolean, save: boolean): this {
+    if (isEqual) {
+      elements = elements.filter(element => !this.some(item => lodash.isEqual(item, element)))
+
+      if (elements.length === 0) {
+        return this
+      }
+    }
+
+    this.push(...elements)
+    Cfg.set<T[]>(this.#keyPath, this.slice(), save)
+
+    return this
+  }
+
+  /**
+   * @param save 是否立即保存
+   */
+  remove (predicate: T | ((item: T) => boolean), save: boolean, isIndex: boolean = false): this {
     let newArr: T[] = []
 
     if (isIndex && lodash.isNumber(predicate)) {
@@ -193,8 +231,13 @@ class EnhancedArray<T> extends Array<T> {
     this.length = 0
     this.push(...newArr)
 
-    Cfg.set<T[]>(this.#keyPath, this.slice())
+    Cfg.set<T[]>(this.#keyPath, this.slice(), save)
 
+    return this
+  }
+
+  clear () {
+    this.length = 0
     return this
   }
 }
