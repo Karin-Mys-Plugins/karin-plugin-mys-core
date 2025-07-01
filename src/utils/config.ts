@@ -12,12 +12,12 @@ import path from 'node:path'
 
 const DefaultConfig: ConfigType = {
   device: {
-    deviceName: '',
-    deviceBoard: '',
-    deviceModel: '',
-    androidVersion: '',
-    deviceFingerprint: '',
-    deviceProduct: ''
+    androidVersion: '12',
+    deviceName: 'aurora',
+    deviceBoard: '24031PN0DC',
+    deviceModel: '24031PN0DC',
+    deviceProduct: 'aurora',
+    deviceFingerprint: 'Xiaomi/aurora/aurora:12/V417IR/813:user/release-keys'
   },
   commands: {
     [CoreCommand.BingMysDevice]: {

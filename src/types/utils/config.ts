@@ -12,10 +12,10 @@ export interface CommandItem {
 }
 
 export interface DeviceConfig {
+  androidVersion: string
   deviceName: string
   deviceBoard: string
   deviceModel: string
-  androidVersion: string
-  deviceFingerprint: string
   deviceProduct: string
+  deviceFingerprint: string
 }

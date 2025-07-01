@@ -23,14 +23,40 @@ export default defineConfig({
       label: '默认设备信息',
       children: [
         components.accordion.createItem('accordion-device-item-key', {
-          title: '默认设备信息',
-          subtitle: '如果不知道这是什么请勿修改',
-          children: Object.keys(Cfg.getDef('device'))
-            .map(key => components.input.string(`device-${key}`, {
-              defaultValue: Cfg.get<string>(`device.${key}`),
-              label: key,
+          title: '如果不知道这是什么请勿修改',
+          subtitle: '-',
+          children: [
+            components.input.number('device-androidVersion', {
+              defaultValue: Cfg.get<string>('device.androidVersion'),
+              label: 'androidVersion',
               isRequired: true,
-            }))
+            }),
+            components.input.string('device-deviceName', {
+              defaultValue: Cfg.get<string>('device.deviceName'),
+              label: 'deviceName',
+              isRequired: true,
+            }),
+            components.input.string('device-deviceBoard', {
+              defaultValue: Cfg.get<string>('device.deviceBoard'),
+              label: 'deviceBoard',
+              isRequired: true,
+            }),
+            components.input.string('device-deviceModel', {
+              defaultValue: Cfg.get<string>('device.deviceModel'),
+              label: 'deviceModel',
+              isRequired: true,
+            }),
+            components.input.string('device-deviceProduct', {
+              defaultValue: Cfg.get<string>('device.deviceProduct'),
+              label: 'deviceProduct',
+              isRequired: true,
+            }),
+            components.input.string('device-deviceFingerprint', {
+              defaultValue: Cfg.get<string>('device.deviceFingerprint'),
+              label: 'deviceFingerprint',
+              isRequired: true,
+            }),
+          ],
         }),
       ],
     })
