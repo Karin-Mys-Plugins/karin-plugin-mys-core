@@ -19,20 +19,20 @@
     "pub": "npm publish --access public"
   },
   "exports": {
-    "./types": {
-      "types": "./lib/exports/types.d.ts",
-      "development": "./src/exports/types.ts",
-      "default": "./lib/exports/types.js"
+    "./config": {
+      "types": "./lib/exports/config/index.d.ts",
+      "development": "./src/exports/config/index.ts",
+      "default": "./lib/exports/config/index.js"
     },
     "./database": {
-      "types": "./lib/exports/database.d.ts",
-      "development": "./src/exports/database.ts",
-      "default": "./lib/exports/database.js"
+      "types": "./lib/exports/database/index.d.ts",
+      "development": "./src/exports/database/index.ts",
+      "default": "./lib/exports/database/index.js"
     },
-    "./core": {
-      "types": "./lib/exports/core.d.ts",
-      "development": "./src/exports/core.ts",
-      "default": "./lib/exports/core.js"
+    "./utils": {
+      "types": "./lib/exports/utils/index.d.ts",
+      "development": "./src/exports/utils/index.ts",
+      "default": "./lib/exports/utils/index.js"
     }
   },
   "main": "lib/index.js",
@@ -42,18 +42,18 @@
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
-    "@types/lodash": "^4.17.19",
+    "@types/express": "^5.0.1",
+    "@types/lodash": "^4.17.16",
+    "@types/node": "^20.17.8",
     "@types/md5": "^2.3.5",
-    "@types/node": "20.19.0",
     "@types/qrcode": "^1.5.5",
     "cross-env": "^7.0.3",
-    "eslint": "^9.30.0",
+    "eslint": "^9.7.0",
     "neostandard": "^0.11.9",
-    "node-karin": "^1.10.16",
+    "node-karin": "^1.13.0",
     "tsup": "^8.5.0",
-    "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.3"
   },
   "karin": {
     "main": "src/index.ts",
@@ -65,15 +65,19 @@
     ],
     "web": "./lib/web.config.js",
     "ts-web": "./src/web.config.ts",
-    "static": [],
+    "static": [
+      "resources"
+    ],
     "files": [
       "config",
-      "data"
+      "data",
+      "resources"
     ]
   },
   "files": [
     "/lib/**/*.js",
     "/lib/**/*.d.ts",
+    "resources",
     "!lib/app.js"
   ],
   "publishConfig": {

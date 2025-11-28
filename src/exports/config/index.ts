@@ -1,3 +1,3 @@
+export * from './array'
 export * from './config'
-// export * from './mys'
 export * from './types'

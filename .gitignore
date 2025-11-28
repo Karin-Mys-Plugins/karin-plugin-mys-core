@@ -132,8 +132,6 @@ build
 *.sln
 *.suo
 
-@karinjs
+@karinjs/
 
-lib
-*.css.map
-resources
+lib/
