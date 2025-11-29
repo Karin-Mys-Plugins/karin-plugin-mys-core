@@ -121,3 +121,19 @@ export const getUserGameRolesByCookie = new DefineApi<
     HeaderFn: self.CookieHeaders
   })
 )
+
+export const getUserFullInfo = new DefineApi<
+  BaseMysRes & {
+    data: {
+      user_info: {
+        uid: string
+      }
+    }
+  },
+  null,
+  { cookie: string } & BaseltuidInfo
+>((self, data) => ({
+  Method: 'GET',
+  Url: new URL(`${MysHosts.web.miyoushe}user/wapi/getUserFullInfo?gids=2`),
+  HeaderFn: self.CookieHeaders
+}))

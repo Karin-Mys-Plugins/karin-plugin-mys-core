@@ -1,6 +1,7 @@
 import { getCookieTokenBySToken, getUserGameRolesByCookie } from '@/core/mys/api'
-import { BaseUserInfoTableType, DatabaseReturn, DatabaseType, MysAccountInfoDB, MysAccountInfoTableType, MysAccountType, MysDeviceInfoDB, MysUserInfoDB } from '@/exports/database'
-import { BaseltuidInfo, CookieParmsType, RefreshUidData, StokenParmsType, UidPermission } from '../types'
+import { BaseUserInfoTableType, DatabaseReturn, DatabaseType, MysAccountInfoDB, MysAccountInfoTableType, MysAccountType, MysDeviceInfoDB, MysUserInfoDB, UidPermission } from '@/exports/database'
+import { BaseltuidInfo, CookieParamsType, GameUserInfoBase, RefreshUidResultType, StokenParamsType } from '../types'
+import { MysGame } from './game'
 
 export class BaseUserInfo<U extends BaseUserInfoTableType> {
   userId: BaseUserInfoTableType['userId']
@@ -16,36 +17,46 @@ export class BaseUserInfo<U extends BaseUserInfoTableType> {
   }
 
   get ltuids () {
-    return [...this.UserInfo.ltuids]
+    return this.UserInfo.ltuids
   }
 
   get stuids () {
-    return [...this.UserInfo.stuids]
+    return this.UserInfo.stuids
   }
 
   get deviceList () {
-    return [...this.UserInfo.deviceList]
+    return this.UserInfo.deviceList
   }
 
-  async initMysAccountInfo (UserInfo: DatabaseReturn<BaseUserInfoTableType>[DatabaseType.Db]) {
+  get LtuidInfoList () {
+    return Array.from(this.#ltuidMap.values()).map(info => Object.freeze(info)).sort((a, b) => +a.ltuid - +b.ltuid)
+  }
+
+  async initMysAccountInfo (UserInfo: DatabaseReturn<BaseUserInfoTableType>[DatabaseType.Db], initAll: boolean) {
     this.UserInfo = UserInfo
 
     this.#ltuidMap.clear()
 
     const idList = Array.from(new Set([...UserInfo.ltuids, ...UserInfo.stuids]))
 
-    const MysAccountInfoList = await (await MysAccountInfoDB()).findAllByPks(idList)
-    MysAccountInfoList.forEach((MysAccountInfo) => {
-      this.#ltuidMap.set(MysAccountInfo.ltuid, MysAccountInfo)
-    })
+    if (initAll) {
+      const MysAccountInfoList = await (await MysAccountInfoDB()).findAllByPks(idList)
+      MysAccountInfoList.forEach((MysAccountInfo) => {
+        this.#ltuidMap.set(MysAccountInfo.ltuid, MysAccountInfo)
+      })
+    } else {
+      const self = this as unknown as GameUserInfoBase<any>
+      const mainLtuid = self.bind_uids?.[self.main_uid]?.ltuid
+
+      if (mainLtuid) {
+        const MysAccountInfo = await (await MysAccountInfoDB()).findByPk(mainLtuid)
+        MysAccountInfo && this.#ltuidMap.set(MysAccountInfo.ltuid, MysAccountInfo)
+      }
+    }
   }
 
   getLtuidInfo (ltuid: string) {
     return Object.freeze(this.#ltuidMap.get(ltuid))
-  }
-
-  getLtuidInfoList () {
-    return Array.from(this.#ltuidMap.values()).map(info => Object.freeze(info))
   }
 
   async getDeviceInfoList () {
@@ -67,16 +78,14 @@ export class BaseUserInfo<U extends BaseUserInfoTableType> {
   }
 }
 
-const refreshUidFClassMap = new Map<string, RefreshUidData>()
-
 export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
-  static async create (userId: string) {
+  static async create (userId: string, initAll: boolean = false): Promise<UserInfo> {
     const userInfo = new BaseUserInfo<BaseUserInfoTableType>(userId)
 
     userInfo.refresh = async () => {
       const UserInfoData = await (await MysUserInfoDB()).findByPk(userId, true)
 
-      await userInfo.initMysAccountInfo(UserInfoData)
+      await userInfo.initMysAccountInfo(UserInfoData, initAll)
 
       return userInfo
     }
@@ -84,28 +93,32 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
     return await userInfo.refresh()
   }
 
-  static addRefreshUidDataClass (refreshClass: RefreshUidData) {
-    refreshUidFClassMap.set(refreshClass.columnKey, refreshClass)
-  }
-
-  static async refreshUid (options: { cookie: string } & BaseltuidInfo) {
+  static async refreshUid (options: { userId: string, cookie: string } & BaseltuidInfo, perm: UidPermission): Promise<RefreshUidResultType> {
     let message = ''
 
-    const uids: {
-      name: string,
-      columnKey: `${string}-uids`,
-      data: Record<string, UidPermission>
-    }[] = []
+    const uids: RefreshUidResultType['uids'] = []
 
-    if (refreshUidFClassMap.size > 0) {
+    if (MysGame.num > 0) {
       const res = (await getUserGameRolesByCookie.init(options).request(null)).data
 
       if (res?.retcode === 0) {
-        refreshUidFClassMap.forEach(refreshClass => {
+        await MysGame.forEachGame(async Game => {
+          const uidList = Game.refresh(res.data.list)
+
+          const userInfo = await Game.UserInfo.create(options.userId)
+          const bindUids = userInfo.bind_uids
+          uidList.forEach(uid => {
+            if (!(uid in bindUids) || bindUids[uid]!.perm < perm) {
+              bindUids[uid] = {
+                perm, ltuid: options.ltuid
+              }
+            }
+          })
+
           uids.push({
-            name: refreshClass.name,
-            columnKey: refreshClass.columnKey,
-            data: refreshClass.refresh(res.data.list)
+            name: Game.name,
+            columnKey: Game.columnKey,
+            data: bindUids
           })
         })
       } else if (res?.retcode === -100) {
@@ -120,7 +133,23 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
     }
   }
 
-  static async refreshCookie (stokenParams: StokenParmsType, serv: MysAccountType) {
+  static async refreshCookie (stokenParams: StokenParamsType, serv: MysAccountType | MysAccountType[]): Promise<
+    { Serv: MysAccountType, cookieParams: CookieParamsType; message: string }
+  > {
+    if (Array.isArray(serv)) {
+      for (const s of serv) {
+        const res = await UserInfo.refreshCookie(stokenParams, s)
+
+        if (Object.keys(res.cookieParams).length > 0) {
+          return res
+        }
+      }
+
+      return {
+        Serv: MysAccountType.cn, cookieParams: {}, message: '获取Cookie失败，请重新#扫码登录！'
+      }
+    }
+
     const res = (await getCookieTokenBySToken.init(null).request({
       stoken: new URLSearchParams({
         stoken: stokenParams.stoken,
@@ -129,13 +158,14 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
       }).toString(),
       method: serv === MysAccountType.cn ? 'GET' : 'POST'
     })).data
+
     let message = ''
-    let cookieParms: CookieParmsType = {}
+    let cookieParams: CookieParamsType = {}
 
     if (res?.retcode === -100) {
       message = '登录状态失效，请重新#扫码登录！'
     } else if (res?.data?.cookie_token) {
-      cookieParms = {
+      cookieParams = {
         ltuid: stokenParams.stuid,
         ltoken: stokenParams.stoken,
         cookie_token: res.data.cookie_token,
@@ -146,7 +176,7 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
     }
 
     return {
-      Serv: serv, cookieParms, message
+      Serv: serv, cookieParams, message
     }
   }
 }

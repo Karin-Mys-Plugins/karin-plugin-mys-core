@@ -134,6 +134,12 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     return async (data: Partial<T>) => {
       delete data[this.model.primaryKeyAttribute]
 
+      for (const key in data) {
+        if (data[key] === undefined) {
+          delete data[key]
+        }
+      }
+
       const result = await model.update(data)
 
       return {

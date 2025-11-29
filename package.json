@@ -29,6 +29,11 @@
       "development": "./src/exports/database/index.ts",
       "default": "./lib/exports/database/index.js"
     },
+    "./mys": {
+      "types": "./lib/exports/mys/index.d.ts",
+      "development": "./src/exports/mys/index.ts",
+      "default": "./lib/exports/mys/index.js"
+    },
     "./utils": {
       "types": "./lib/exports/utils/index.d.ts",
       "development": "./src/exports/utils/index.ts",
@@ -75,9 +80,12 @@
     ]
   },
   "files": [
+    "LICENSE",
     "/lib/**/*.js",
     "/lib/**/*.d.ts",
     "resources",
+    "!resources/**/*.css.map",
+    "!resources/**/*.scss",
     "!lib/app.js"
   ],
   "publishConfig": {

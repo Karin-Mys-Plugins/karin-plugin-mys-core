@@ -2,7 +2,7 @@ import { Model, ModelAttributeColumnOptions } from 'sequelize'
 import { Database } from '../database'
 import { DatabaseClassInstance, DatabaseType, Dialect } from '../types'
 
-export class Table<TableType extends Record<string, any>, DBType extends DatabaseType> {
+export class Table<TableType extends Record<string, any>, DBType extends DatabaseType, ExtraTableType extends Record<string, any>> {
   #dialect: Dialect
   #Database: DatabaseClassInstance<TableType, DBType>
 
@@ -46,7 +46,7 @@ export class Table<TableType extends Record<string, any>, DBType extends Databas
     return this.#cache<TableType>()
   }
 
-  async addSchem<newTableType extends Record<string, any>> (newSchema: Record<keyof newTableType, ModelAttributeColumnOptions<Model>>) {
+  async addSchem<newTableType extends ExtraTableType> (newSchema: Record<keyof newTableType, ModelAttributeColumnOptions<Model>>) {
     this.modelSchema = Object.assign(this.modelSchema, newSchema)
 
     this.initCache = await this.#Database.init(

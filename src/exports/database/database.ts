@@ -1,22 +1,7 @@
-import { karin, logger } from 'node-karin'
-import lodash from 'node-karin/lodash'
+import { logger } from 'node-karin'
 import { DataTypes, Model, ModelAttributeColumnOptions } from 'sequelize'
 import { Sqlite3, Sqlite3Static } from './dbs/sqlite3'
 import { DatabaseClassStatic, DatabaseFn, DatabaseType, Dialect } from './types'
-
-karin.handler('YYSLS.Database.default', async (args, next) => {
-  if (!args.Database || !args.Static) {
-    return next()
-  }
-  if (!lodash.isFunction(args.Database)) {
-    await Database.Add(
-      args.Database as DatabaseFn,
-      args.Static as DatabaseClassStatic
-    )
-  } else {
-    logger.error('设置默认数据库失败: Database 必须是一个函数！')
-  }
-})
 
 export const Database = new class DatabaseClass {
   #defaultDialect = Dialect.Sqlite
@@ -33,10 +18,10 @@ export const Database = new class DatabaseClass {
   }
 
   /** @description 添加数据库 */
-  async Add (Database: DatabaseFn, Static: DatabaseClassStatic) {
-    const db = Database()
+  async Add (Db: DatabaseFn, Static: DatabaseClassStatic) {
+    const db = Db()
     if (await db.check()) {
-      this.#DatabaseMap.set(Static.dialect, { Database, Static })
+      this.#DatabaseMap.set(Static.dialect, { Database: Db, Static })
     } else {
       logger.error(`${Static.dialect} check failed!`)
     }

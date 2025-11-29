@@ -4,7 +4,7 @@ import { Database } from '../database'
 import { Table } from '../dbs'
 import { DatabaseType, MysDeviceInfoTableType } from '../types'
 
-export const MysDeviceInfoTable = new Table<MysDeviceInfoTableType, DatabaseType.Db>(
+export const MysDeviceInfoTable = new Table<MysDeviceInfoTableType, DatabaseType.Db, {}>(
   dir.DataDir, 'mys_device_info_data', DatabaseType.Db
 )
 

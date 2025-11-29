@@ -3,7 +3,7 @@ import { Database } from '../database'
 import { Table } from '../dbs'
 import { DatabaseType, MysAccountInfoTableType, MysAccountType } from '../types'
 
-export const MysAccountInfoTable = new Table<MysAccountInfoTableType, DatabaseType.Db>(
+export const MysAccountInfoTable = new Table<MysAccountInfoTableType, DatabaseType.Db, {}>(
   dir.DataDir, 'mys_account_info_data', DatabaseType.Db
 )
 

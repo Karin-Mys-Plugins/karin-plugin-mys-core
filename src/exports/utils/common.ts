@@ -1,7 +1,7 @@
 import lodash from 'node-karin/lodash'
 
 /**
- *  生成随机字符串
+ * @description 生成随机字符串
  * @param length - 字符串长度
  */
 export const randomString = (length: number, type: 'Lower' | 'Upper' | 'All') => {
@@ -17,7 +17,7 @@ export const randomString = (length: number, type: 'Lower' | 'Upper' | 'All') =>
 }
 
 /**
- * 生成设备guid
+ * @description 生成设备guid
  */
 export const getDeviceGuid = () => {
   function S4 () {
@@ -25,4 +25,33 @@ export const getDeviceGuid = () => {
   }
 
   return (S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4())
+}
+
+/**
+ * @description 将字符串解析为key-value键值对
+ * @param Str - 字符串
+ * @param sep - 分隔符
+ */
+export const StrToObj = <
+  D extends { [key: string]: string }
+> (Str: string, sep: string | RegExp): Partial<D> => {
+  const strObj: { [key: string]: string } = {}
+
+  Str.split(sep).forEach(item => {
+    const [key, value] = item.split('=')
+    if (key) {
+      strObj[key] = value || ''
+    }
+  })
+
+  return strObj as Partial<D>
+}
+
+/**
+ * @description 将key-value键值对解析为字符串
+ * @param obj - key-value键值对
+ * @param sep - 分隔符
+ */
+export const ObjToStr = (obj: Record<string, string | number>, sep: string) => {
+  return Object.entries(obj).filter(([k, v]) => v).map(([k, v]) => `${k}=${v}`).join(sep) + sep
 }
