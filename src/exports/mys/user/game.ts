@@ -25,6 +25,8 @@ export const MysGame = new class MysGame {
   async forEachGame<GameUserInfoTableType extends BaseUserInfoTableType> (
     fn: (Game: RegisterGameBase<GameUserInfoTableType>) => Promise<void | 'break'>
   ) {
+    if (this.num === 0) return
+
     for (const Game of this.#games.values()) {
       if (await fn(Game) === 'break') break
     }

@@ -60,11 +60,14 @@ export declare class GameUserInfoBase<GameUserInfoTableType extends BaseUserInfo
   getUIDInfo (uid: string): UidInfo | undefined
 }
 
+type gameName = '崩坏：星穹铁道' | '崩坏：因缘精灵' | '原神' | '崩坏3' | '崩坏学园2' | '未定事件簿' | '绝区零' | '星布谷地'
+
 export class RegisterGameBase<GameUserInfoTableType extends BaseUserInfoTableType> {
   game: string
   columnKey: `${string}-uids`
   /** @description 游戏名称 */
-  name: string
+  name: gameName
+
   /** @description 指令前缀匹配 */
   prefix: RegExp
 
@@ -72,7 +75,7 @@ export class RegisterGameBase<GameUserInfoTableType extends BaseUserInfoTableTyp
 
   declare UserInfo: typeof GameUserInfoBase<GameUserInfoTableType>
 
-  constructor (game: string, name: string, prefix: RegExp) {
+  constructor (game: string, name: gameName, prefix: RegExp) {
     this.game = game
     this.columnKey = `${game}-uids`
 

@@ -1,6 +1,6 @@
 import { MysAccountType } from '@/exports/database'
 import { DeviceInfo, UserInfo } from '@/exports/mys'
-import karin from 'node-karin'
+import karin, { Message } from 'node-karin'
 
 export const BindMysDevice = karin.command(
   /^#绑定(米游社|mys)?设备$/,
@@ -65,8 +65,14 @@ export const BindMysDevice = karin.command(
       deviceList: userInfo.deviceList.add(deviceMD5, true)
     })
 
-    e.reply('设备绑定成功', { at: true })
-
-    return true
+    return await ShowBindDeviceCmdFuc(e)
   }
+)
+
+const ShowBindDeviceCmdFuc = async (e: Message) => {
+
+}
+
+export const ShowBindMysDevice = karin.command(
+  /^#?(米游社|mys)设备(列表)?$/, ShowBindDeviceCmdFuc
 )

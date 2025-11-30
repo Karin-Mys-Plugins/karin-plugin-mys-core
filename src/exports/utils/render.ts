@@ -12,39 +12,45 @@ export interface RenderCfg {
   ResourcesDir: string
 }
 
-export class Render<K extends string> {
+export class RenderTemplate<K extends string> {
   #renderCfg: RenderCfg
   constructor (cfg: RenderCfg) {
     this.#renderCfg = cfg
   }
 
-  async template (template: K, rendeDdata: Record<string, any>, type: 'png' | 'jpeg' | 'webp' = 'jpeg') {
-    return 'base64://' + await karin.render({
+  /** @description 渲染Html路径为：resources/template/${template}/index.html */
+  async template (template: K, rendeDdata: Record<string, any>, options: { type?: 'png' | 'jpeg' | 'webp', plugin?: Record<string, any> } = {}) {
+    const img = await karin.render({
       name: `${this.#renderCfg.name}/${template}`,
       data: {
         ...rendeDdata,
         plugin: {
+          ...(options.plugin || {}),
+          template,
           name: this.#renderCfg.name,
           version: this.#renderCfg.version,
-          template,
           resources: {
             default: path.join(this.#renderCfg.pluginDir, 'resources').replace(/\\/g, '/'),
             download: this.#renderCfg.ResourcesDir.replace(/\\/g, '/'),
           },
-          defaultLayout: path.join(this.#renderCfg.pluginDir, 'resources/template/layout/default.html')
+          defaultLayout: path.join(this.#renderCfg.pluginDir, 'resources/template/layout/default.html'),
         },
         karin: {
           version: config.pkg().version
         }
       },
 
-      type,
-      omitBackground: type === 'png',
+      type: options.type || 'jpeg',
+      omitBackground: options.type === 'png',
       selector: 'container',
       file: path.join(this.#renderCfg.pluginDir, `resources/template/${template}/index.html`),
       setViewport: {
         deviceScaleFactor: 2
       }
     })
+
+    if (!img) return null
+
+    return 'base64://' + img
   }
 }

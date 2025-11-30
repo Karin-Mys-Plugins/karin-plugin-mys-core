@@ -1,13 +1,14 @@
+import { Render } from '@/core'
 import { DatabaseReturn, DatabaseType, MysAccountInfoTableType, UidPermission } from '@/exports/database'
 import { GameUserInfoBase, MysGame, UserInfo } from '@/exports/mys'
-import karin from 'node-karin'
+import karin, { handler, Message, segment } from 'node-karin'
 
 export const BindUID = karin.command(
   /^#?(.*?)绑定uid(?:\s*(.+))?$/i,
   async (e, next) => {
     const msgMatch = e.msg.match(/^#?(?<prefix>.*?)绑定uid(?:\s*(?<uid>.+))?$/i)?.groups!
 
-    const Game = MysGame.match(msgMatch.prefix!.trim())
+    const Game = MysGame.match(msgMatch.prefix?.trim() || '')
     if (!Game) return next()
 
     const uid = msgMatch.uid?.trim()
@@ -21,14 +22,14 @@ export const BindUID = karin.command(
 
     const bindUids = userInfo.bind_uids
     if (!(uid in bindUids)) {
-      bindUids[uid] = { perm: UidPermission.NB, ltuid: '' }
+      bindUids[uid] = { perm: UidPermission.BIND, ltuid: '' }
     }
 
     await userInfo.saveUserInfo({
       [Game.game + '-main']: uid, [Game.game + '-uids']: bindUids
     })
 
-    e.reply('')
+    await handler.call(`MYS.${Game.game}.ShowUID`, { e })
 
     return true
   }
@@ -48,7 +49,7 @@ export const UnbindUID = karin.command(
   async (e, next) => {
     const msgMatch = e.msg.match(/^#?(?<prefix>.*?)(删除|解绑)uid(?:\s*(?<idx>.+))?$/i)?.groups!
 
-    const Game = MysGame.match(msgMatch.prefix!.trim())
+    const Game = MysGame.match(msgMatch.prefix?.trim() || '')
     if (!Game) return next()
 
     const uid = msgMatch.idx?.trim()
@@ -75,7 +76,11 @@ export const UnbindUID = karin.command(
       delUid = filterUids[idx - 1][0]
     }
     if (delUid in bindUids) {
-      bindUids[delUid]!.perm = UidPermission.DEL
+      if (bindUids[delUid]!.perm === UidPermission.BIND) {
+        delete bindUids[delUid]
+      } else {
+        bindUids[delUid]!.perm = UidPermission.DEL
+      }
     } else {
       e.reply('UID未绑定，请检查后重新输入！', { at: true })
 
@@ -88,10 +93,80 @@ export const UnbindUID = karin.command(
       [Game.game + '-main']: mainUid, [Game.game + '-uids']: bindUids
     })
 
-    e.reply('')
+    await handler.call(`MYS.${Game.game}.ShowUID`, { e })
 
     return true
   }
+)
+
+export const ShowBindAccountCmdFunc = async (e: Message) => {
+  const userInfo = await UserInfo.create(e.userId, true)
+
+  const renderData: {
+    User: {
+      userId: string
+      avatar: string
+      nickname: string
+    },
+    AccountList: {
+      ltuid: string
+      permission: UidPermission
+      bindUids: {
+        gameName: string
+        uids: { uid: string, perm: UidPermission }[]
+      }[]
+    }[]
+  } = {
+    User: {
+      userId: e.userId,
+      avatar: e.contact.name,
+      nickname: await e.bot.getAvatarUrl(e.userId, 100)
+    },
+    AccountList: []
+  }
+
+  const ltuidInfoList = userInfo.LtuidInfoList
+  if (ltuidInfoList.length > 0) {
+    for (const ltuidInfo of ltuidInfoList) {
+      const data = {
+        ltuid: ltuidInfo.ltuid,
+        permission: UidPermission.BIND,
+        bindUids: [] as {
+          gameName: string
+          uids: { uid: string, perm: UidPermission }[]
+        }[]
+      }
+
+      if (ltuidInfo.cookie) {
+        data.permission += UidPermission.CK
+      }
+      if (ltuidInfo.stoken) {
+        data.permission += UidPermission.ST
+      }
+
+      await MysGame.forEachGame(async Game => {
+        const gameUserInfo = await Game.UserInfo.create(e.userId)
+
+        data.bindUids.push({
+          gameName: Game.name,
+          uids: Object.entries(gameUserInfo.bind_uids).filter(([, info]) => info!.ltuid === ltuidInfo.ltuid).map(([uid, info]) => ({
+            uid, perm: info!.perm
+          }))
+        })
+      })
+
+      renderData.AccountList.push(data)
+    }
+  }
+
+  const image = await Render.template('ShowBindAccount', renderData)
+  image && e.reply(segment.image(image), { at: true })
+
+  return true
+}
+
+export const ShowBindAccount = karin.command(
+  /^#?(米游社|mys)账号(列表)?$/i, ShowBindAccountCmdFunc
 )
 
 export const UnbindAccount = karin.command(
@@ -136,19 +211,17 @@ export const UnbindAccount = karin.command(
       stuids: userInfo.stuids.remove(ltuid)
     })
 
-    MysGame.num > 0 && await MysGame.forEachGame(async Game => {
+    await MysGame.forEachGame(async Game => {
       const gameUserInfo = await Game.UserInfo.create(e.userId)
       const bindUids = gameUserInfo.bind_uids
 
       for (const uid in bindUids) {
         if (bindUids[uid]!.ltuid === ltuid) {
-          bindUids[uid]!.perm = UidPermission.NB
+          bindUids[uid]!.perm = UidPermission.BIND
         }
       }
     })
 
-    e.reply('')
-
-    return true
+    return await ShowBindAccountCmdFunc(e)
   }
 )

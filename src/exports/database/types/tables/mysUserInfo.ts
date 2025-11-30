@@ -9,7 +9,7 @@ export interface BaseUserInfoTableType {
 
 export const enum UidPermission {
   /** @description 普通绑定 */
-  NB = 0,
+  BIND = 0,
   /** @description Cookie */
   CK = 1,
   /** @description SToken */

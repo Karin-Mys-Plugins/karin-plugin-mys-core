@@ -1,0 +1,65 @@
+<!-- default layout -->
+{{extend plugin.defaultLayout}}
+
+<!-- 页面样式资源 -->
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{plugin.resources.default}}/template/{{plugin.template}}/index.css" />
+
+{{/block}}
+
+<!-- 页面布局内容 -->
+{{block 'container'}}
+<!-- 右上角装饰 logo -->
+<div class="mys-logo-bg"></div>
+
+<div class="user">
+  <img class="avatar" src="{{User.avatar}}" />
+  <span class="nickname">{{@User.nickname}} ({{User.userId}})</span>
+</div>
+
+{{if AccountList && AccountList.length > 0}}
+{{each AccountList account idx}}
+<div class="bind-account">
+
+  <div class="title">
+    <span class="ltuid">MYS UID ({{idx + 1}})：{{account.ltuid}}</span>
+
+    <div class="perm">
+      {{if account.permission >= 1}}
+      <span class="cookie">cookie</span>
+      {{/if}}
+
+      {{if account.permission >= 2}}
+      <span class="stoken">stoken</span>
+      {{/if}}
+    </div>
+
+  </div>
+
+  {{each account.bindUids bindUid}}
+  <div class="bind-uid">
+    <img class="game" src="{{plugin.resources.default}}/image/launcher-icon/{{bindUid.gameName}}.png" />
+
+    <div class="uids">
+      {{each bindUid.uids info}}
+      <span class="uid-item {{info.perm}}">{{info.uid}}</span>
+      {{/each}}
+    </div>
+
+  </div>
+  {{/each}}
+
+</div>
+{{/each}}
+{{else}}
+<div class="no-accounts">暂未绑定账号</div>
+{{/if}}
+
+{{/block}}
+
+<!-- 页面脚本资源 -->
+{{block 'script'}}
+<script>
+
+</script>
+{{/block}}

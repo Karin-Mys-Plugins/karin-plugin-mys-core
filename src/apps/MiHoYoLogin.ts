@@ -1,9 +1,10 @@
-import { fetchQRcode, getCookieAccountInfoByGameToken, getTokenByGameToken, getUserFullInfo, queryQRcode } from '@/core/mys/api'
+import { fetchQRcode, getCookieAccountInfoByGameToken, getTokenByGameToken, getUserFullInfo, queryQRcode } from '@/core/mys'
 import { BaseGameUIDInfoTableType, MysAccountType, UidPermission, } from '@/exports/database'
 import { CookieParamsType, RefreshUidResultType, StokenParamsType, UserInfo } from '@/exports/mys'
 import { common } from '@/exports/utils'
 import karin, { common as karinCommon, logger, segment } from 'node-karin'
 import QR from 'qrcode'
+import { ShowBindAccountCmdFunc } from './UIDManage'
 
 const QRCodes: Map<string, string | true> = new Map()
 
@@ -126,14 +127,16 @@ export const MiHoYoLoginQRCode = karin.command(
       account_id: stokenParams.stuid
     }
 
-    e.reply(
-      await BindStoken(e.userId, stokenParams, { cookieParams, Serv: MysAccountType.cn }),
-      { at: true }
-    )
+    const errMsg = await BindStoken(e.userId, stokenParams, { cookieParams, Serv: MysAccountType.cn })
+    if (errMsg) {
+      e.reply(errMsg, { at: true })
+
+      return true
+    }
 
     QRCodes.delete(e.userId)
 
-    return true
+    return await ShowBindAccountCmdFunc(e)
   }
 )
 
@@ -144,9 +147,14 @@ export const BindCookieByMessage = karin.command(
 
     const cookieObj = common.StrToObj(cookieMsg.replace(/[#'" ]/g, ''), ';')
 
-    e.reply(await BindCookie(e.userId, cookieObj, UidPermission.CK), { at: true })
+    const errMsg = await BindCookie(e.userId, cookieObj, UidPermission.CK)
+    if (errMsg) {
+      e.reply(errMsg, { at: true })
 
-    return true
+      return true
+    }
+
+    return await ShowBindAccountCmdFunc(e)
   }
 )
 
@@ -163,13 +171,18 @@ export const BindStokenByMessage = karin.command(
       return true
     }
 
-    e.reply(await BindStoken(e.userId, {
+    const errMsg = await BindStoken(e.userId, {
       stuid: stokenObj.stuid || stokenObj.ltuid!,
       stoken: stokenObj.stoken,
       mid: stokenObj.mid
-    }), { at: true })
+    })
+    if (errMsg) {
+      e.reply(errMsg, { at: true })
 
-    return true
+      return true
+    }
+
+    return await ShowBindAccountCmdFunc(e)
   }
 )
 
@@ -192,13 +205,13 @@ const BindStoken = async (userId: string, stokenParams: StokenParamsType, option
 
   logger.mark(`[${userId}] 保存Stoken成功 [stuid: ${stokenParams.stuid}]`)
 
-  const sendMsg = [`米游社ID：${stokenParams.stuid}\nStoken绑定成功！`]
-  sendMsg.push(await BindCookie(userId, updata.cookieParams, UidPermission.CS, updata.Serv))
+  const errMsg = await BindCookie(userId, updata.cookieParams, UidPermission.CS, updata.Serv)
+  if (errMsg) return errMsg
 
-  return sendMsg.join('\n')
+  return false
 }
 
-const BindCookie = async (userId: string, cookieObj: CookieParamsType, perm: UidPermission, Serv?: MysAccountType): Promise<string> => {
+const BindCookie = async (userId: string, cookieObj: CookieParamsType, perm: UidPermission, Serv?: MysAccountType) => {
   if (!cookieObj.cookie_token && !cookieObj.cookie_token_v2) {
     return '发送Cookie不完整(cookie_token缺失)，建议使用#米哈游登录。'
   }
@@ -283,9 +296,5 @@ const BindCookie = async (userId: string, cookieObj: CookieParamsType, perm: Uid
 
   logger.mark(`[${userId}] 保存Cookie成功 [ltuid:${cookieParams.ltuid}]`)
 
-  const sendMsg = uidList.uids.map(value => {
-    return `【${value.name}】：${Object.keys(value.data).join('、')}`
-  })
-
-  return `Cookie绑定成功！\n${sendMsg.join('\n')}`
+  return false
 }

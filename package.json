@@ -47,10 +47,11 @@
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
+    "@karinjs/plugin-puppeteer": "^1.0.21",
     "@types/express": "^5.0.1",
     "@types/lodash": "^4.17.16",
-    "@types/node": "^20.17.8",
     "@types/md5": "^2.3.5",
+    "@types/node": "^20.17.8",
     "@types/qrcode": "^1.5.5",
     "cross-env": "^7.0.3",
     "eslint": "^9.7.0",

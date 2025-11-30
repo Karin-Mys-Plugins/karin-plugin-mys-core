@@ -1,0 +1,51 @@
+@font-face {
+  font-family: 'HYWenHei-55W';
+  src: url('../../fonts//HYWenHei-55W.ttf');
+
+}
+
+:root {
+  --width: 600px
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  background: transparent;
+  color: rgb(255, 255, 255);
+  width: var(--width);
+}
+
+.container {
+  font-family: 'HYWenHei-55W';
+  padding-bottom: 40px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.copyright {
+  left: 0;
+  bottom: 0;
+  display: flex;
+  width: 100%;
+  font-size: 16px;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0 10px 0;
+  background-color: black;
+
+  strong {
+    padding-top: 5px;
+    font-weight: bold;
+    font-size: 10px;
+    color: rgb(242, 192, 111);
+  }
+}
