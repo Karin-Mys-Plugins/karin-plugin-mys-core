@@ -49,6 +49,8 @@ export const BindMysDevice = karin.command(
         version: +device.androidVersion,
         fingerprint: device.deviceFingerprint,
         product: device.deviceProduct,
+        deviceId: device.device_id || crypto.randomUUID(),
+        deviceFp: device.device_fp || '',
       })
     } else if (device.device_id && device.device_fp) {
       deviceMD5 = await DeviceInfo.create(e.userId, {
@@ -70,9 +72,11 @@ export const BindMysDevice = karin.command(
 )
 
 const ShowBindDeviceCmdFuc = async (e: Message) => {
+  e.reply('设备绑定成功', { at: true })
 
+  return true
 }
 
-export const ShowBindMysDevice = karin.command(
-  /^#?(米游社|mys)设备(列表)?$/, ShowBindDeviceCmdFuc
-)
+// export const ShowBindMysDevice = karin.command(
+//   /^#?(米游社|mys)设备(列表)?$/, ShowBindDeviceCmdFuc
+// )

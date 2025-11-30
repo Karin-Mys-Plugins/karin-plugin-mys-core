@@ -87,7 +87,9 @@
     "resources",
     "!resources/**/*.css.map",
     "!resources/**/*.scss",
-    "!lib/app.js"
+    "!lib/app.js",
+    "!lib/app.d.ts",
+    "!lib/index.d.ts"
   ],
   "publishConfig": {
     "access": "public",

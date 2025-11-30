@@ -126,12 +126,15 @@ build
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+!*.code-snippets
 
 # Optional JetBrains Rider files
 .idea
 *.sln
 *.suo
 
+# Karin data
 @karinjs/
 
+# build output
 lib/

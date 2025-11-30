@@ -1,11 +1,13 @@
 import { DeviceCfg, DeviceConfigType } from '@/core'
 import { dir } from '@/dir'
-import { MysAccountType, MysDeviceInfoDatabaseBaseType } from '@/exports/database'
+import { MysAccountType, MysDeviceInfoDatabaseBaseType, MysDeviceInfoDatabaseIdFpType } from '@/exports/database'
 import { common } from '@/exports/utils'
 import md5 from 'md5'
 import { logger, redis, SendMessage } from 'node-karin'
 import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse } from 'node-karin/axios'
 import { ApiInfoFn, BaseMysRes, RequestResult } from '../types/api'
+import { DeviceInfo } from '../user'
+import { getDeviceFp } from './apis'
 import { MysApp } from './app'
 
 export class DefineApi<
@@ -15,14 +17,16 @@ export class DefineApi<
 > {
   declare UserInfo: U
 
-  declare DeviceInfo: MysDeviceInfoDatabaseBaseType & {
-    id: string
+  declare DeviceInfo: MysDeviceInfoDatabaseBaseType & MysDeviceInfoDatabaseIdFpType & {
     /** @description 重要参数 */
     brand: string
     display: string
   }
 
   #apiInfo: ApiInfoFn<R, D, U>
+
+  /** @description 是否使用Fp请求 */
+  #useFp: boolean = false
 
   constructor (apiInfo: ApiInfoFn<R, D, U>) {
     this.#apiInfo = apiInfo
@@ -62,23 +66,58 @@ export class DefineApi<
     }
   }
 
-  initDeviceBase (userInfo: U) {
-    const defaultDeviceInfo = DeviceCfg.get<DeviceConfigType>('')
+  #setDevice (device: MysDeviceInfoDatabaseBaseType & { deviceId: string }, deviceFp?: string) {
+    const fingerprintSplit = device.fingerprint.split('/')
 
-    return this.init(userInfo)
+    this.DeviceInfo = {
+      deviceId: device.deviceId,
+      deviceFp: deviceFp || '',
+      name: device.name,
+      board: device.board,
+      model: device.model,
+      oaid: device.oaid,
+      version: device.version,
+      fingerprint: device.fingerprint,
+      product: device.product,
+      brand: fingerprintSplit[0],
+      display: fingerprintSplit[3]
+    }
   }
 
-  /** @description 需要初始化device_fp时使用 */
-  async initDevice (userInfo: U) {
-    const Init = this.initDeviceBase(userInfo)
+  /** @description 使用CookieHeaders等需要device进行请求时使用 */
+  async initDevice (userInfo: U, deviceFp: boolean = false) {
+    const defaultDeviceInfo = DeviceCfg.get<DeviceConfigType>('')
+    if (userInfo?.deviceMd5) {
+      const deviceData = await DeviceInfo.get(userInfo.deviceMd5)
 
-    return Init
+      deviceData && this.#setDevice(deviceData)
+    }
+
+    if (!this.DeviceInfo) {
+      const uuid = crypto.randomUUID()
+
+      this.#setDevice({ ...defaultDeviceInfo, oaid: uuid, deviceId: uuid })
+    }
+
+    if (deviceFp && !this.DeviceInfo.deviceFp) {
+      const fpData = (await (await getDeviceFp.initDevice(null)).requestCache(`getDeviceFp:${userInfo!.ltuid}`, 3600 * 8, null)).data
+
+      this.#useFp = true
+      this.DeviceInfo.deviceFp = fpData?.data?.device_fp || '38d7faa51d2b6'
+    }
+
+    return this.init(userInfo)
   }
 
   async #requestData (apiInfo: ApiInfoFn<any, any, any>, data: any): Promise<RequestResult<R>> {
     const { Url, Body, Method, Options = {}, HeaderFn, Result } = apiInfo(this, data)
 
     const Headers = new AxiosHeaders(await HeaderFn())
+
+    if (this.#useFp) {
+      Headers.set('x-rpc-device_id', this.DeviceInfo.deviceId)
+      Headers.set('x-rpc-device_fp', this.DeviceInfo.deviceFp)
+    }
 
     const params: AxiosRequestConfig = {
       url: Url.href, method: Method, data: Body, headers: Headers
@@ -132,7 +171,7 @@ export class DefineApi<
   BaseCnHeaders = () => ({
     'x-rpc-app_version': MysApp.version.cn,
     'x-rpc-client_type': '5',
-    'x-rpc-device_id': this.DeviceInfo.id,
+    'x-rpc-device_id': this.DeviceInfo.deviceId,
     'User-Agent': `Mozilla/5.0 (Linux; Android 12; ${this.DeviceInfo.name}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.73 Mobile Safari/537.36 miHoYoBBS/${MysApp.version.cn}`,
     Referer: 'https://webstatic.mihoyo.com'
   })

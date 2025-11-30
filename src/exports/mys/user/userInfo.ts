@@ -1,5 +1,5 @@
-import { getCookieTokenBySToken, getUserGameRolesByCookie } from '@/core/mys'
 import { BaseUserInfoTableType, DatabaseReturn, DatabaseType, MysAccountInfoDB, MysAccountInfoTableType, MysAccountType, MysDeviceInfoDB, MysUserInfoDB, UidPermission } from '@/exports/database'
+import { getCookieTokenBySToken, getUserGameRolesByCookie } from '@/exports/mys'
 import { BaseltuidInfo, CookieParamsType, GameUserInfoBase, RefreshUidResultType, StokenParamsType } from '../types'
 import { MysGame } from './game'
 

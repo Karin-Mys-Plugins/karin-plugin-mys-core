@@ -1,6 +1,5 @@
-import { fetchQRcode, getCookieAccountInfoByGameToken, getTokenByGameToken, getUserFullInfo, queryQRcode } from '@/core/mys'
 import { BaseGameUIDInfoTableType, MysAccountType, UidPermission, } from '@/exports/database'
-import { CookieParamsType, RefreshUidResultType, StokenParamsType, UserInfo } from '@/exports/mys'
+import { CookieParamsType, fetchQRcode, getCookieAccountInfoByGameToken, getTokenByGameToken, getUserFullInfo, queryQRcode, RefreshUidResultType, StokenParamsType, UserInfo } from '@/exports/mys'
 import { common } from '@/exports/utils'
 import karin, { common as karinCommon, logger, segment } from 'node-karin'
 import QR from 'qrcode'

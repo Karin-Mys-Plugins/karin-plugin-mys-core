@@ -31,6 +31,7 @@ export type ApiInfoFn<
 export interface BaseltuidInfo {
   ltuid: string
   type: MysAccountType
+  /** @description 未绑定则使用deviceList中首个设备 */
   deviceMd5: string
 }
 

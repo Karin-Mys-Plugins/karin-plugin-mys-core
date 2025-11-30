@@ -1,6 +1,5 @@
 import { BaseGameUIDInfoTableType, BaseUserInfoTableType, MysAccountType } from '@/exports/database'
-import { BaseUserInfo } from '../../user'
-import { UidInfo } from '../api'
+import { GameUserInfoBase } from './game'
 
 export interface StokenParamsType {
   stuid: string
@@ -45,19 +44,6 @@ export interface RefreshUidResultType {
     data: BaseGameUIDInfoTableType<string>[`${string}-uids`]
   }[]
   message: string
-}
-
-export declare class GameUserInfoBase<GameUserInfoTableType extends BaseUserInfoTableType> extends BaseUserInfo<GameUserInfoTableType> {
-  main_uid: string
-  bind_uids: BaseGameUIDInfoTableType<string>[`${string}-uids`]
-
-  get mainUIDInfo (): UidInfo | undefined
-
-  get uidInfoList (): UidInfo[]
-
-  static create<T extends BaseUserInfoTableType> (userId: string): Promise<GameUserInfoBase<T>>
-
-  getUIDInfo (uid: string): UidInfo | undefined
 }
 
 type gameName = '崩坏：星穹铁道' | '崩坏：因缘精灵' | '原神' | '崩坏3' | '崩坏学园2' | '未定事件簿' | '绝区零' | '星布谷地'
