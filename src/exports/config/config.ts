@@ -12,7 +12,7 @@ export class Config<C extends Record<string, any>> {
    * @description 默认配置
    */
   #DefaultConfig: C
-  #IgnoreConfig: Record<string, any>
+  #DefineConfig: Record<string, any>
   /**
    * @description 配置保存路径
    */
@@ -21,12 +21,12 @@ export class Config<C extends Record<string, any>> {
   /**
    * @param name 插件名称:配置名称
    */
-  constructor (name: `${string}:${string}`, ConfigPath: string, DefaultConfig: C, IgnoreConfig: Record<string, any>) {
+  constructor (name: `${string}:${string}`, ConfigPath: string, DefaultConfig: C, DefineConfig: Record<string, any>) {
     this.#cfgName = name
 
     this.#ConfigPath = ConfigPath
     this.#DefaultConfig = DefaultConfig
-    this.#IgnoreConfig = IgnoreConfig
+    this.#DefineConfig = DefineConfig
 
     !existsSync(ConfigPath) && writeJsonSync(ConfigPath, DefaultConfig)
 
@@ -37,7 +37,7 @@ export class Config<C extends Record<string, any>> {
     const config = requireFileSync(this.#ConfigPath)
 
     // 检查并补全缺失的配置项
-    const mergedConfig = this.mergeWithDefaults(config, this.#DefaultConfig, this.#IgnoreConfig)
+    const mergedConfig = this.mergeWithDefaults(config, this.#DefaultConfig, this.#DefineConfig)
 
     // 更新缓存
     this.#ConfigCache = mergedConfig

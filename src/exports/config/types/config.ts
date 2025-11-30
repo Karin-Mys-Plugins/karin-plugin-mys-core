@@ -1,8 +1,8 @@
-export interface ConfigIgnore<T> {
+export interface ConfigDefine<T> {
   defaultConfig: T
 }
 
-export interface ConfigIgnoreArray<T> {
+export interface ConfigDefineArray<T> {
   defaultConfig: T[]
   defaultConfigItem: {
     defaultConfig: T
