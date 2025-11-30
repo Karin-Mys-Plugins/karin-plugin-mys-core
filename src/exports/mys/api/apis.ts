@@ -1,6 +1,6 @@
 import { MysAccountType } from '@/exports/database'
 import { UserGameRoleItem } from '@/exports/mys'
-import { BaseltuidInfo, BaseMysRes, DefineApi, MysApp, MysHosts } from '@/exports/mys/api'
+import { BaseltuidInfoType, BaseMysRes, DefineApi, MysApp, MysHosts } from '@/exports/mys/api'
 import lodash from 'node-karin/lodash'
 
 export const fetchQRcode = new DefineApi<
@@ -114,7 +114,7 @@ export const getUserGameRolesByCookie = new DefineApi<
     }
   },
   null,
-  { cookie: string } & BaseltuidInfo
+  { cookie: string } & BaseltuidInfoType
 >(
   (self, data) => ({
     Method: 'GET',
@@ -132,7 +132,7 @@ export const getUserFullInfo = new DefineApi<
     }
   },
   null,
-  { cookie: string } & BaseltuidInfo
+  { cookie: string } & BaseltuidInfoType
 >((self, data) => ({
   Method: 'GET',
   Url: new URL(`${MysHosts.web.miyoushe}user/wapi/getUserFullInfo?gids=2`),

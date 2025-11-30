@@ -1,14 +1,14 @@
 import { BaseUserInfoTableType, DatabaseReturn, DatabaseType, MysAccountInfoDB, MysAccountInfoTableType, MysAccountType, MysDeviceInfoDB, MysUserInfoDB, UidPermission } from '@/exports/database'
 import { getCookieTokenBySToken, getUserGameRolesByCookie } from '@/exports/mys'
-import { BaseltuidInfo, CookieParamsType, GameUserInfoBase, RefreshUidResultType, StokenParamsType } from '../types'
+import { BaseltuidInfoType, CookieParamsType, GameUserInfoBase, RefreshUidResultType, StokenParamsType } from '../types'
 import { MysGame } from './game'
 
 export class BaseUserInfo<U extends BaseUserInfoTableType> {
   userId: BaseUserInfoTableType['userId']
 
-  #ltuidMap = new Map<string, DatabaseReturn<MysAccountInfoTableType>[DatabaseType.Db]>()
+  ltuidMap = new Map<string, DatabaseReturn<MysAccountInfoTableType>[DatabaseType.Db]>()
 
-  declare UserInfo: DatabaseReturn<BaseUserInfoTableType>[DatabaseType.Db]
+  declare UserInfo: DatabaseReturn<U>[DatabaseType.Db]
 
   declare refresh: () => Promise<this>
 
@@ -29,20 +29,20 @@ export class BaseUserInfo<U extends BaseUserInfoTableType> {
   }
 
   get LtuidInfoList () {
-    return Array.from(this.#ltuidMap.values()).map(info => Object.freeze(info)).sort((a, b) => +a.ltuid - +b.ltuid)
+    return Array.from(this.ltuidMap.values()).map(info => Object.freeze(info)).sort((a, b) => +a.ltuid - +b.ltuid)
   }
 
-  async initMysAccountInfo (UserInfo: DatabaseReturn<BaseUserInfoTableType>[DatabaseType.Db], initAll: boolean) {
+  async initMysAccountInfo (UserInfo: DatabaseReturn<U>[DatabaseType.Db], initAll: boolean) {
     this.UserInfo = UserInfo
 
-    this.#ltuidMap.clear()
+    this.ltuidMap.clear()
 
     const idList = Array.from(new Set([...UserInfo.ltuids, ...UserInfo.stuids]))
 
     if (initAll) {
       const MysAccountInfoList = await (await MysAccountInfoDB()).findAllByPks(idList)
       MysAccountInfoList.forEach((MysAccountInfo) => {
-        this.#ltuidMap.set(MysAccountInfo.ltuid, MysAccountInfo)
+        this.ltuidMap.set(MysAccountInfo.ltuid, MysAccountInfo)
       })
     } else {
       const self = this as unknown as GameUserInfoBase<any>
@@ -50,13 +50,13 @@ export class BaseUserInfo<U extends BaseUserInfoTableType> {
 
       if (mainLtuid) {
         const MysAccountInfo = await (await MysAccountInfoDB()).findByPk(mainLtuid)
-        MysAccountInfo && this.#ltuidMap.set(MysAccountInfo.ltuid, MysAccountInfo)
+        MysAccountInfo && this.ltuidMap.set(MysAccountInfo.ltuid, MysAccountInfo)
       }
     }
   }
 
   getLtuidInfo (ltuid: string) {
-    return Object.freeze(this.#ltuidMap.get(ltuid))
+    return Object.freeze(this.ltuidMap.get(ltuid))
   }
 
   async getDeviceInfoList () {
@@ -68,13 +68,13 @@ export class BaseUserInfo<U extends BaseUserInfoTableType> {
   }
 
   async saveMysAccountInfo (ltuid: string, data: Partial<MysAccountInfoTableType>) {
-    let MysAccountInfo = this.#ltuidMap.get(ltuid)
+    let MysAccountInfo = this.ltuidMap.get(ltuid)
     if (!MysAccountInfo) {
       MysAccountInfo = await (await MysAccountInfoDB()).findByPk(ltuid, true)
     }
 
     await MysAccountInfo.save(data)
-    this.#ltuidMap.set(ltuid, { ...MysAccountInfo, ...data })
+    this.ltuidMap.set(ltuid, { ...MysAccountInfo, ...data })
   }
 }
 
@@ -93,7 +93,7 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
     return await userInfo.refresh()
   }
 
-  static async refreshUid (options: { userId: string, cookie: string } & BaseltuidInfo, perm: UidPermission): Promise<RefreshUidResultType> {
+  static async refreshUid (options: { userId: string, cookie: string } & BaseltuidInfoType, perm: UidPermission): Promise<RefreshUidResultType> {
     let message = ''
 
     const uids: RefreshUidResultType['uids'] = []

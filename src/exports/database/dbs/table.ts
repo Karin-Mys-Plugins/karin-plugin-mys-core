@@ -13,6 +13,9 @@ export class Table<TableType extends Record<string, any>, DBType extends Databas
   declare initCache: DatabaseClassInstance<TableType, DBType>
   declare modelSchema: Record<keyof TableType, ModelAttributeColumnOptions<Model>>
 
+  /**
+   * @param type Db: 直接保存在sqlite数据中、 File: 保存在单个json文件中、 Dir: 保存在多个json文件的目录中、Schema中除pk外每一个键值对应一个文件 e.g tableName/user/key.json
+   */
   constructor (DataDir: string, tableName: string, type: DBType) {
     this.#Database = Database.get<TableType, DBType>()
     this.#dialect = this.#Database.dialect

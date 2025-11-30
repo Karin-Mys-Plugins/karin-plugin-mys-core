@@ -28,20 +28,18 @@ export type ApiInfoFn<
   Result?: (response: AxiosResponse) => Promise<{ data: R, row: any }>
 }
 
-export interface BaseltuidInfo {
+export interface BaseltuidInfoType {
   ltuid: string
   type: MysAccountType
   /** @description 未绑定则使用deviceList中首个设备 */
   deviceMd5: string
 }
 
-export interface UidInfo extends BaseltuidInfo {
+export interface UidInfoType extends BaseltuidInfoType {
   uid: string
+  userId: string
   cookie: string
   stoken: string
-
-  userId: string
-  owner: boolean
 }
 
 export interface DeviceInfoType {

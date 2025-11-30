@@ -1,5 +1,4 @@
-import { BaseGameUIDInfoTableType, BaseUserInfoTableType, MysAccountType } from '@/exports/database'
-import { GameUserInfoBase } from './game'
+import { BaseGameUIDInfoTableType, MysAccountType } from '@/exports/database'
 
 export interface StokenParamsType {
   stuid: string
@@ -44,28 +43,4 @@ export interface RefreshUidResultType {
     data: BaseGameUIDInfoTableType<string>[`${string}-uids`]
   }[]
   message: string
-}
-
-type gameName = '崩坏：星穹铁道' | '崩坏：因缘精灵' | '原神' | '崩坏3' | '崩坏学园2' | '未定事件簿' | '绝区零' | '星布谷地'
-
-export class RegisterGameBase<GameUserInfoTableType extends BaseUserInfoTableType> {
-  game: string
-  columnKey: `${string}-uids`
-  /** @description 游戏名称 */
-  name: gameName
-
-  /** @description 指令前缀匹配 */
-  prefix: RegExp
-
-  declare refresh: (info: UserGameRoleItem[]) => string[]
-
-  declare UserInfo: typeof GameUserInfoBase<GameUserInfoTableType>
-
-  constructor (game: string, name: gameName, prefix: RegExp) {
-    this.game = game
-    this.columnKey = `${game}-uids`
-
-    this.name = name
-    this.prefix = prefix
-  }
 }
