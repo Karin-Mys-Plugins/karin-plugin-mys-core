@@ -119,8 +119,8 @@ export const ShowBindAccountCmdFunc = async (e: Message) => {
   } = {
     User: {
       userId: e.userId,
-      avatar: e.contact.name,
-      nickname: await e.bot.getAvatarUrl(e.userId, 100)
+      avatar: await e.bot.getAvatarUrl(e.userId, 100),
+      nickname: e.contact.name
     },
     AccountList: []
   }

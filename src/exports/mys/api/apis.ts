@@ -1,7 +1,8 @@
 import { MysAccountType } from '@/exports/database'
-import { UserGameRoleItem } from '@/exports/mys'
-import { BaseltuidInfoType, BaseMysRes, DefineApi, MysApp, MysHosts } from '@/exports/mys/api'
+import { BaseltuidInfoType, BaseMysRes, UserGameRoleItemType } from '@/exports/mys'
 import lodash from 'node-karin/lodash'
+import { MysApp, MysHosts } from './app'
+import { DefineApi } from './define'
 
 export const fetchQRcode = new DefineApi<
   BaseMysRes & {
@@ -110,7 +111,7 @@ export const getCookieTokenBySToken = new DefineApi<
 export const getUserGameRolesByCookie = new DefineApi<
   BaseMysRes & {
     data: {
-      list: UserGameRoleItem[]
+      list: UserGameRoleItemType[]
     }
   },
   null,

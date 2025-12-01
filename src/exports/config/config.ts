@@ -162,8 +162,10 @@ export class Config<C extends Record<string, any>> {
     }
   }
 
-  watch () {
-    watch(this.#ConfigPath, () => {
+  watch (fnc?: (self: Config<C>, oldData: C, newData: C) => Promise<void> | void) {
+    watch(this.#ConfigPath, async (oldData: C, newData) => {
+      fnc && await fnc(this, oldData, newData)
+
       this.loadConfig()
     })
 

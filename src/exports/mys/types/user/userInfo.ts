@@ -27,7 +27,7 @@ export type CookieParamsType = Partial<{
   mi18nLang: string
 }>
 
-export interface UserGameRoleItem {
+export interface UserGameRoleItemType {
   game_biz: string
   region: string
   game_uid: string

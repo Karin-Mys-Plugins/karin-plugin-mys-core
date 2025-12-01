@@ -1,5 +1,5 @@
 import { BaseUserInfoTableType } from '@/exports/database'
-import { RegisterGameBase } from '../types'
+import { gameName, GameUserInfoBase, UserGameRoleItemType } from '../types'
 
 export const MysGame = new class MysGame {
   #games = new Map<string, RegisterGameBase<any>>()
@@ -32,3 +32,29 @@ export const MysGame = new class MysGame {
     }
   }
 }()
+
+export class RegisterGameBase<GameUserInfoTableType extends BaseUserInfoTableType> {
+  game: string
+  columnKey: `${string}-uids`
+  /** @description 游戏名称 */
+  name: gameName
+
+  /** @description 指令前缀匹配 */
+  prefix: RegExp
+
+  refresh: (info: UserGameRoleItemType[]) => string[]
+
+  UserInfo: typeof GameUserInfoBase<GameUserInfoTableType>
+
+  constructor (game: string, name: gameName, prefix: RegExp, userInfo: typeof GameUserInfoBase<GameUserInfoTableType>, refreshFuc: (info: UserGameRoleItemType[]) => string[]) {
+    this.game = game
+    this.columnKey = `${game}-uids`
+
+    this.name = name
+    this.prefix = prefix
+
+    this.UserInfo = userInfo
+
+    this.refresh = refreshFuc
+  }
+}
