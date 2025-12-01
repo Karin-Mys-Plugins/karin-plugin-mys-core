@@ -198,7 +198,7 @@ import { Database } from 'karin-plugin-mys-core/database'
 // 获取数据库实例
 const db = Database.get<TableType, DatabaseType>()
 
-// 设置默认数据库
+// 设置默认数据库（不要在你的插件中随意使用）
 Database.default(Dialect.Sqlite)
 
 // 添加新的数据库支持
@@ -206,28 +206,148 @@ await Database.Add(DatabaseFn, StaticClass)
 
 // 获取数据库列表
 const dbList = Database.details
+```
 
-// 定义列
-Database.Column(type, options)
-Database.PkColumn(type, options)  // 主键列
-Database.ArrayColumn(type)
-Database.JsonColumn(type)
+**列定义方法**
+
+```typescript
+// 1. 普通列 - Column(type, defaultValue, options?)
+Database.Column(
+  'STRING',           // 数据类型：STRING, INTEGER, BOOLEAN, TEXT 等
+  'default',          // 默认值
+  {                   // 可选配置
+    allowNull: false, // 是否允许为空
+    unique: true      // 是否唯一
+  }
+)
+
+// 2. 主键列 - PkColumn(type, options?)
+Database.PkColumn(
+  'STRING',           // 数据类型
+  {                   // 可选配置（已包含 primaryKey: true, allowNull: false）
+    autoIncrement: true  // 自动递增（仅数字类型）
+  }
+)
+
+// 3. 数组列 - ArrayColumn(key, transformFn?)
+Database.ArrayColumn(
+  'tags',             // 列名（必须与 schema 中的 key 一致）
+  (data) => data      // 可选：数据转换函数
+)
+// 存储格式：逗号分隔的字符串 "tag1,tag2,tag3"
+// 读取返回：DatabaseArray<T> 类型
+
+// 4. JSON 列 - JsonColumn(key, defaultValue)
+Database.JsonColumn(
+  'metadata',         // 列名（必须与 schema 中的 key 一致）
+  {}                  // 默认值（JSON 对象）
+)
+// 存储格式：JSON 字符串
+// 读取返回：自动解析为对象
+```
+
+**完整列定义示例**
+
+```typescript
+import { Database } from 'karin-plugin-mys-core/database'
+
+const userSchema = {
+  // 主键列：只需指定类型
+  userId: Database.PkColumn('STRING'),
+  
+  // 普通列：类型 + 默认值 + 可选配置
+  nickname: Database.Column('STRING', 'Guest', { allowNull: false }),
+  email: Database.Column('STRING', '', { unique: true }),
+  age: Database.Column('INTEGER', 0),
+  active: Database.Column('BOOLEAN', true),
+  bio: Database.Column('TEXT', ''),
+  
+  // 数组列：列名必须与 key 一致
+  tags: Database.ArrayColumn('tags'),
+  // 或带转换函数
+  roles: Database.ArrayColumn('roles', (data) => {
+    return data.filter(role => role !== 'banned')
+  }),
+  
+  // JSON 列：列名 + 默认值对象
+  profile: Database.JsonColumn('profile', { level: 1, exp: 0 }),
+  settings: Database.JsonColumn('settings', { theme: 'light' }),
+  metadata: Database.JsonColumn('metadata', {})
+}
+```
+
+**数据库类型**
+
+本模块支持三种数据库存储类型：
+
+| 类型 | 说明 | 存储方式 | 适用场景 |
+|------|------|---------|---------|
+| `DatabaseType.Db` | SQL 数据库 | SQLite/MySQL 等数据库表 | 大量结构化数据、需要复杂查询 |
+| `DatabaseType.File` | 单文件存储 | 每个记录一个 JSON 文件 | 小量数据、独立配置文件 |
+| `DatabaseType.Dir` | 目录存储 | 每个记录一个目录，目录内多个 JSON 文件 | 复杂数据结构、需要分文件存储 |
+
+> [!IMPORTANT]
+> **大型数据库说明**：当使用 PostgreSQL、MySQL、MariaDB 等大型数据库时，**三种类型的存储方式都会统一使用 SQL 数据库表**。只有在使用 SQLite 时，才会根据不同的 `DatabaseType` 采用不同的存储策略（文件、目录或数据库）。
+> 不论在使用什么数据库，编写代码时统一只考虑数据库为 SQLite 时使用何DatabaseType类型
+> ```typescript
+> // 使用 PostgreSQL 时（不要在你的插件中随意使用）
+> Database.default(Dialect.PostgreSQL)
+> 
+> // 这三种初始化方式最终都会使用 PostgreSQL 数据库表
+> await db.init('./data', 'users', schema, DatabaseType.Db)    // ✅ 数据库表
+> await db.init('./data', 'users', schema, DatabaseType.File)  // ✅ 数据库表（非文件）
+> await db.init('./data', 'users', schema, DatabaseType.Dir)   // ✅ 数据库表（非目录）
+> ```
+
+**初始化表**
+
+根据不同的数据库类型初始化表：
+
+```typescript
+// 1. SQL 数据库模式（推荐用于大量数据）
+const dbInstance = Database.get<UserType, DatabaseType.Db>()
+await dbInstance.init(
+  './data',              // 数据目录
+  'users',               // 表名
+  schema,                // 表结构
+  DatabaseType.Db        // 数据库类型：SQL 数据库
+)
+// 存储位置：./data/database/sqlite3.db（表名：users）
+
+// 2. 单文件存储模式（适合独立配置）
+const fileInstance = Database.get<ConfigType, DatabaseType.File>()
+await fileInstance.init(
+  './data',              // 数据目录
+  'configs',             // 目录名
+  schema,                // 数据结构
+  DatabaseType.File      // 数据库类型：单文件
+)
+// 存储位置：./data/configs/{userId}.json
+
+// 3. 目录存储模式（适合复杂数据）
+const dirInstance = Database.get<ComplexType, DatabaseType.Dir>()
+await dirInstance.init(
+  './data',              // 数据目录
+  'userdata',            // 目录名
+  schema,                // 数据结构
+  DatabaseType.Dir       // 数据库类型：目录
+)
+// 存储位置：./data/userdata/{userId}/*.json
 ```
 
 **数据库操作**
 
-```typescript
-// 初始化表
-await db.init(dataDir, modelName, modelSchema, DatabaseType.Db)
+所有类型的数据库都支持统一的操作接口：
 
+```typescript
 // 查找记录（主键）
 const record = await db.findByPk(pk, create?: boolean)
 
-// 查找所有记录
+// 查找多个记录（批量查询）
 const records = await db.findAllByPks(pks)
 
-// 查找符合条件的记录
-const results = await db.findAll(where, limit?)
+// 查找所有记录（可排除指定主键）
+const allRecords = await db.findAll(excludePks?: string[])
 
 // 保存记录
 await record.save({ key: value })
@@ -238,24 +358,119 @@ await record.destroy()
 
 **示例**
 
+**示例 1：SQL 数据库模式 - 用户信息表**
+
 ```typescript
 import { Database, DatabaseType } from 'karin-plugin-mys-core/database'
 
-// 定义表结构
-const schema = {
-  userId: Database.PkColumn('STRING'),
-  nickname: Database.Column('STRING', { allowNull: false }),
-  level: Database.Column('INTEGER', { defaultValue: 1 }),
-  data: Database.JsonColumn('TEXT')
+// 定义用户表结构（注意参数顺序）
+const userSchema = {
+  userId: Database.PkColumn('STRING'),                        // 主键
+  nickname: Database.Column('STRING', '', { allowNull: false }), // 默认值 '', 不允许为空
+  level: Database.Column('INTEGER', 1),                       // 默认值 1
+  coins: Database.Column('INTEGER', 0),                       // 默认值 0
+  vip: Database.Column('BOOLEAN', false),                     // 默认值 false
+  tags: Database.ArrayColumn('tags'),                         // 数组列
+  data: Database.JsonColumn('data', {})                       // JSON 列，默认值 {}
 }
 
-// 初始化数据库
-const db = Database.get<UserType, DatabaseType.Db>()
-await db.init('./data', 'users', schema, DatabaseType.Db)
+// 初始化 SQL 数据库
+const userDB = Database.get<UserType, DatabaseType.Db>()
+await userDB.init('./data', 'users', userSchema, DatabaseType.Db)
 
 // 操作数据
-const user = await db.findByPk('123456', true)
-await user.save({ level: 10 })
+const user = await userDB.findByPk('123456', true)  // 不存在则创建
+await user.save({ 
+  level: 10, 
+  coins: 1000,
+  data: { lastLogin: Date.now() }
+})
+
+// 批量查询
+const users = await userDB.findAllByPks(['123456', '789012'])
+
+// 查询所有用户
+const allUsers = await userDB.findAll()
+```
+
+**示例 2：单文件存储 - 配置文件**
+
+```typescript
+import { Database, DatabaseType } from 'karin-plugin-mys-core/database'
+
+// 定义配置结构（注意参数顺序）
+const configSchema = {
+  key: Database.PkColumn('STRING'),                    // 主键
+  value: Database.Column('TEXT', ''),                  // 默认值 ''
+  type: Database.Column('STRING', 'string'),           // 默认值 'string'
+  updatedAt: Database.Column('INTEGER', 0)             // 默认值 0
+}
+
+// 初始化文件存储
+const configDB = Database.get<ConfigType, DatabaseType.File>()
+await configDB.init('./config', 'settings', configSchema, DatabaseType.File)
+
+// 操作配置
+const config = await configDB.findByPk('app_name', true)
+await config.save({
+  key: 'app_name',
+  value: 'My App',
+  type: 'string',
+  updatedAt: Date.now()
+})
+// 将保存到：./config/settings/app_name.json
+```
+
+**示例 3：目录存储 - 复杂用户数据**
+
+```typescript
+import { Database, DatabaseType } from 'karin-plugin-mys-core/database'
+
+// 定义复杂数据结构（注意参数顺序）
+const complexSchema = {
+  userId: Database.PkColumn('STRING'),                           // 主键
+  profile: Database.JsonColumn('profile', {}),                   // JSON 列，默认值 {}
+  inventory: Database.JsonColumn('inventory', { items: [] }),    // JSON 列，默认值 { items: [] }
+  achievements: Database.ArrayColumn('achievements'),            // 数组列
+  settings: Database.JsonColumn('settings', {})                  // JSON 列，默认值 {}
+}
+
+// 初始化目录存储
+const complexDB = Database.get<ComplexType, DatabaseType.Dir>()
+await complexDB.init('./data', 'userdata', complexSchema, DatabaseType.Dir)
+
+// 操作数据
+const userData = await complexDB.findByPk('123456', true)
+await userData.save({
+  userId: '123456',
+  profile: { name: '玩家', avatar: 'url' },
+  inventory: { items: [], weapons: [] },
+  achievements: ['first_login', 'level_10'],
+  settings: { theme: 'dark', language: 'zh-cn' }
+})
+// 将保存到：./data/userdata/123456/ 目录下的多个 JSON 文件
+
+// 删除数据
+await userData.destroy()  // 删除整个目录
+```
+
+**数据库方言对比**
+
+```typescript
+import { Dialect } from 'karin-plugin-mys-core/database'
+
+// SQLite（默认）- 支持三种存储模式
+Database.default(Dialect.Sqlite)
+// ✅ DatabaseType.Db   → SQLite 数据库表
+// ✅ DatabaseType.File → JSON 文件存储
+// ✅ DatabaseType.Dir  → 目录 + JSON 文件
+
+// PostgreSQL/MySQL/MariaDB 等 - 所有数据都使用 Db 模式
+Database.default(Dialect.PostgreSQL)  // 或 MySQL, MariaDB
+// ✅ DatabaseType.Db   → PostgreSQL 数据库表
+// ✅  DatabaseType.File → PostgreSQL 数据库表
+// ✅  DatabaseType.Dir  → PostgreSQL 数据库表
+
 ```
 
 **内置表**
