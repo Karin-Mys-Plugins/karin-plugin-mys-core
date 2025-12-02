@@ -90,7 +90,7 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
       omitBackground: options.type === 'png',
       selector: 'container',
       setViewport: {
-        deviceScaleFactor: 2
+        deviceScaleFactor: 3
       },
       ...(options.render || {}),
 

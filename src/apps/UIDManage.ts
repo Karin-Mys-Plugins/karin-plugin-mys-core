@@ -145,7 +145,9 @@ export const ShowBindAccountCmdFunc = async (e: Message) => {
     }
   }
 
-  const image = await Render.template('ShowBindAccount', ShowBindAccountComponent, renderData)
+  const image = await Render.template('ShowBindAccount', ShowBindAccountComponent, renderData, {
+    type: 'png'
+  })
   image && e.reply(segment.image(image), { at: true })
 
   return true

@@ -1,4 +1,4 @@
-<h1 align="center"><font color="#3f7dd1">karin-plugin-mys-core</font></h1>
+![karin-plugin-mys-core](https://socialify.git.ci/Karin-Mys-Plugins/karin-plugin-mys-core/image?forks=1&issues=1&language=1&name=1&owner=1&pulls=1&stargazers=1&theme=Light)
 
 ## 📖 目录
 
@@ -11,7 +11,7 @@
   - [米游社模块 (mys)](#米游社模块-mys)
   - [渲染模块 (render)](#渲染模块-render)
   - [工具模块 (utils)](#工具模块-utils)
-- [贡献与反馈](#贡献与反馈)
+- [贡献者](#贡献者)
 
 ---
 
@@ -1072,7 +1072,18 @@ const str = common.ObjToStr({ key: 'value', foo: 'bar' }, '&')
 
 ---
 
-## 贡献与反馈
+### 贡献者
 
-- 有任何建议或问题，欢迎在 [Issues](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/issues) 提出。
-- 也可加入官方交流群交流经验。
+[![贡献者](https://contributors-img.web.app/image?repo=Karin-Mys-Plugins/karin-plugin-mys-core)](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/graphs/contributors)
+
+![Alt](https://repobeats.axiom.co/api/embed/d187ed0811bf5aae42c89dceaf7482f8944bbbea.svg "Repobeats analytics image")
+
+## 如何参与贡献（PR）
+
+1. Fork 本仓库，创建你的分支
+2. 提交你的更改，附上简要说明
+3. 发起 Pull Request，耐心等待 Review
+4. 你的名字将出现在贡献者列表，收获一份开源荣誉！
+5. 有任何建议或问题，欢迎在 [Issues](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/issues) 提出。
+
+> 💡 欢迎任何形式的贡献，无论是代码、文档、建议还是灵感！
