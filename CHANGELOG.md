@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.5](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.4...v1.0.5) (2025-12-02)
+
+
+### Bug Fixes
+
+* 使用ssr生成html ([6e5263d](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/6e5263db5c2a5aec917af210a1ffd7e7b5536d72))
+* 账号列表头像名字显示错误、更新文档 ([d446dc0](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/d446dc0a76d485d94a0ee1c83637ab52360062d5))
+
 ## [1.0.4](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.3...v1.0.4) (2025-11-30)
 
 
