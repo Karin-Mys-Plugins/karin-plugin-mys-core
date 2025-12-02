@@ -98,11 +98,10 @@
     "/lib/**/*.js",
     "/lib/**/*.d.ts",
     "resources",
-    "!resources/**/*.css.map",
-    "!resources/**/*.scss",
     "!lib/app.js",
     "!lib/app.d.ts",
-    "!lib/index.d.ts"
+    "!lib/index.d.ts",
+    "!lib/apps/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public",
