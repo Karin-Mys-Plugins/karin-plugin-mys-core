@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.7](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.6...v1.0.7) (2025-12-02)
+
+
+### Bug Fixes
+
+* 字体 ([c4b1f34](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/c4b1f34862444e7dac2b1117b31d9addebd69ce2))
+* 导出DefaultLayout ([55a6d68](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/55a6d68c7985e5f62afea1437efafcef7651022d))
+
 ## [1.0.6](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.5...v1.0.6) (2025-12-02)
 
 
