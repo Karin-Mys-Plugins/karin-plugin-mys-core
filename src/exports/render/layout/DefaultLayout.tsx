@@ -1,5 +1,6 @@
+import { dir } from '@/dir'
+import { config } from 'node-karin'
 import React from 'react'
-import { Render } from '../render'
 
 export interface DefaultLayoutProps {
   children: React.ReactNode
@@ -14,7 +15,7 @@ export interface DefaultLayoutProps {
 export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
   children, bgColor, mysPlugin
 }) => {
-  const { plugin, karin } = Render
+  const karinVersion = config.pkg().version
 
   return (
     <div
@@ -47,7 +48,7 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
 
         <div className='flex items-center gap-2'>
           <img
-            src={`${plugin.resources.default}/image/mys-core-logo.png`}
+            src={`${dir.pluginDir}/resources/image/mys-core-logo.png`}
             alt='MysCore Logo'
             className='h-6 w-6 rounded-sm'
           />
@@ -55,7 +56,7 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
             <span className='text-[5px] font-bold leading-none text-black'>KARIN-PLUGIN</span>
             <div className='flex items-baseline gap-0.5'>
               <span className='font-semibold'>MysCore</span>
-              <strong className='text-xs font-bold text-[#f2c06f]'>v{plugin.version}</strong>
+              <strong className='text-xs font-bold text-[#f2c06f]'>v{dir.version}</strong>
             </div>
           </div>
         </div>
@@ -64,7 +65,7 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
 
         <div className='flex items-center gap-2'>
           <img
-            src={`${plugin.resources.default}/image/frame-logo.png`}
+            src={`${dir.pluginDir}/resources/image/frame-logo.png`}
             alt='Karin Logo'
             className='h-6 w-6 rounded-sm'
           />
@@ -72,7 +73,7 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
             <span className='text-[5px] font-bold leading-none text-black'>IS DRIVEN BY</span>
             <div className='flex items-baseline gap-1.5'>
               <span className='font-semibold'>Karin</span>
-              <strong className='text-[10px] font-bold text-[#f2c06f]'>v{karin.version}</strong>
+              <strong className='text-[10px] font-bold text-[#f2c06f]'>v{karinVersion}</strong>
             </div>
           </div>
         </div>
