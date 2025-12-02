@@ -9,6 +9,7 @@
   - [配置模块 (config)](#配置模块-config)
   - [数据库模块 (database)](#数据库模块-database)
   - [米游社模块 (mys)](#米游社模块-mys)
+  - [渲染模块 (render)](#渲染模块-render)
   - [工具模块 (utils)](#工具模块-utils)
 - [贡献与反馈](#贡献与反馈)
 
@@ -720,6 +721,329 @@ MysHosts.hk4e     // 原神 API
 
 ---
 
+### 渲染模块 (render)
+
+渲染模块提供了基于 React 的模板渲染功能，可以将 React 组件渲染为图片。
+
+#### 导入方式
+
+```typescript
+import { ReactRender, React } from 'karin-plugin-mys-core/render'
+// 或者单独导入
+import React from 'karin-plugin-mys-core/render'
+```
+
+#### ReactRender 类
+
+用于将 React 组件渲染为图片的核心类。
+
+**类型定义**
+
+```typescript
+interface RenderCfg {
+  /** 插件名称 package.json 的 name */
+  name: string
+  /** 插件版本 package.json 的 version */
+  version: string
+  /** 根目录绝对路径 */
+  pluginDir: string
+  /** 插件资源目录 @karinjs/karin-plugin-xxx/resources */
+  ResourcesDir: string
+}
+
+class ReactRender<P extends Record<string, any>, K extends string>
+```
+
+**构造函数**
+
+```typescript
+const render = new ReactRender<PluginOptions, TemplateName>(
+  {
+    name: 'karin-plugin-example',
+    version: '1.0.0',
+    pluginDir: '/path/to/plugin',
+    ResourcesDir: '/path/to/@karinjs/karin-plugin-example/resources'
+  },
+  {
+    // 自定义插件参数（可选）
+    customOption: 'value'
+  }
+)
+```
+
+**主要属性**
+
+```typescript
+// 获取插件信息
+render.plugin
+// 返回:
+// {
+//   name: string              // 插件名称
+//   version: string           // 插件版本
+//   resources: {
+//     default: string         // 插件内部资源路径
+//     download: string        // 插件外部资源路径
+//   }
+//   ...customOptions          // 自定义选项
+// }
+
+// 获取 Karin 版本信息
+render.karin
+// 返回: { version: string }
+```
+
+**template 方法**
+
+将 React 组件渲染为图片。
+
+```typescript
+async template<C extends React.ComponentType<any>>(
+  template: K,                           // 模板名称
+  component: C,                          // React 组件
+  props: React.ComponentProps<C>,        // 组件 props
+  options?: {
+    type?: 'png' | 'jpeg' | 'webp'      // 图片格式，默认 'jpeg'
+    plugin?: Record<string, any>         // 额外插件参数
+    render?: {                           // 渲染选项
+      name?: string                      // 文件名（不含后缀）
+      setViewport?: {
+        deviceScaleFactor?: number       // 设备缩放比例，默认 2
+      }
+      // 更多 karin.render 选项...
+    }
+  }
+): Promise<string | null>
+```
+
+**返回值**
+
+- 成功：返回 `'base64://...'` 格式的 base64 图片字符串
+- 失败：返回 `null`
+
+**渲染流程**
+
+1. 将 React 组件渲染为 HTML 字符串
+2. 生成完整的 HTML 文档，自动引入 CSS 文件
+3. 保存 HTML 到临时目录
+4. 使用 Puppeteer 将 HTML 渲染为图片
+5. 返回 base64 格式的图片数据
+
+**CSS 文件要求**
+
+CSS 文件应放置在 `resources/styles/{插件名}.css` 路径下，会自动被引入到渲染的 HTML 中。
+
+**完整示例**
+
+```typescript
+import { ReactRender, React } from 'karin-plugin-mys-core/render'
+import path from 'path'
+
+// 定义模板名称类型
+type Templates = 'userCard' | 'stats'
+
+// 定义自定义插件选项（可选）
+interface PluginOptions {
+  theme: string
+}
+
+// 创建渲染器实例
+const render = new ReactRender<PluginOptions, Templates>(
+  {
+    name: 'karin-plugin-example',
+    version: '1.0.0',
+    pluginDir: path.resolve(__dirname, '..'),
+    ResourcesDir: path.resolve(__dirname, '../resources')
+  },
+  {
+    theme: 'light'  // 自定义选项
+  }
+)
+
+// 定义组件的 Props 类型
+interface UserCardProps {
+  username: string
+  level: number
+  avatar: string
+}
+
+// 创建 React 组件
+const UserCard: React.FC<UserCardProps> = ({ username, level, avatar }) => {
+  // 访问插件信息
+  const plugin = render.plugin
+  
+  return (
+    <div className="user-card">
+      <img src={avatar} alt="avatar" />
+      <h2>{username}</h2>
+      <p>等级: {level}</p>
+      <p>主题: {plugin.theme}</p>
+      {/* 使用插件资源 */}
+      <img src={`${plugin.resources.default}/image/icon.png`} />
+    </div>
+  )
+}
+
+// 渲染组件为图片
+async function renderUserCard(userId: string) {
+  const image = await render.template(
+    'userCard',           // 模板名称
+    UserCard,             // 组件
+    {                     // Props
+      username: '玩家',
+      level: 60,
+      avatar: 'https://...'
+    },
+    {                     // 选项
+      type: 'png',        // PNG 格式
+      render: {
+        name: `user-${userId}`,  // 自定义文件名
+        setViewport: {
+          deviceScaleFactor: 2   // 2倍缩放（高清）
+        }
+      }
+    }
+  )
+  
+  if (image) {
+    console.log('渲染成功:', image)
+    // 返回 'base64://...'
+    return image
+  } else {
+    console.error('渲染失败')
+    return null
+  }
+}
+```
+
+**在消息事件中使用**
+
+```typescript
+import { plugin } from 'node-karin'
+import { ReactRender, React } from 'karin-plugin-mys-core/render'
+
+// 创建渲染器
+const render = new ReactRender<{}, 'profile'>(
+  {
+    name: 'my-plugin',
+    version: '1.0.0',
+    pluginDir: __dirname,
+    ResourcesDir: path.join(__dirname, 'resources')
+  }
+)
+
+// 定义组件
+interface ProfileProps {
+  nickname: string
+  uid: string
+  level: number
+}
+
+const ProfileCard: React.FC<ProfileProps> = ({ nickname, uid, level }) => (
+  <div className="profile-card">
+    <h1>{nickname}</h1>
+    <p>UID: {uid}</p>
+    <p>等级: {level}</p>
+  </div>
+)
+
+// 在插件中使用
+export const showProfile = plugin({
+  name: '查看信息',
+  rule: [{ reg: /^#查看信息$/i }]
+}, async (e) => {
+  // 渲染图片
+  const image = await render.template(
+    'profile',
+    ProfileCard,
+    {
+      nickname: e.sender.card || e.sender.nickname,
+      uid: e.userId,
+      level: 60
+    },
+    { type: 'jpeg' }
+  )
+  
+  if (image) {
+    // 直接发送 base64 图片
+    await e.reply(image)
+  } else {
+    await e.reply('渲染失败')
+  }
+  
+  return true
+})
+```
+
+**使用 Tailwind CSS**
+
+插件支持 Tailwind CSS，可以在组件中直接使用 Tailwind 类名：
+
+```typescript
+const Card: React.FC<{ title: string }> = ({ title }) => (
+  <div className="bg-white rounded-lg shadow-md p-4">
+    <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+    <div className="mt-2 space-y-2">
+      <p className="text-sm text-gray-600">这是一段文字</p>
+    </div>
+  </div>
+)
+```
+
+确保已引入 Tailwind：
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义样式 */
+.custom-class {
+  /* ... */
+}
+```
+
+**高级用法：复杂布局**
+
+```typescript
+// 布局组件
+const DefaultLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="max-w-4xl mx-auto">
+      {children}
+    </div>
+  </div>
+)
+
+// 内容组件
+const ContentCard: React.FC<{ data: any[] }> = ({ data }) => (
+  <DefaultLayout>
+    <div className="bg-white rounded-2xl shadow-xl p-6">
+      <h1 className="text-3xl font-bold mb-4">标题</h1>
+      {data.map((item, idx) => (
+        <div key={idx} className="border-b py-2">
+          {item.name}
+        </div>
+      ))}
+    </div>
+  </DefaultLayout>
+)
+
+// 渲染
+const image = await render.template('content', ContentCard, {
+  data: [{ name: '项目1' }, { name: '项目2' }]
+})
+```
+
+**注意事项**
+
+1. **CSS 文件位置**：CSS 文件必须位于 `resources/styles/{插件名}.css`，否则样式无法加载
+2. **图片格式**：`png` 支持透明背景，`jpeg` 文件更小，`webp` 是现代格式
+3. **性能优化**：使用 `deviceScaleFactor: 2` 可获得高清图片，但会增加渲染时间
+4. **临时文件**：HTML 临时文件保存在 `@karinjs/temp/html/{插件名}/{模板名}/` 目录
+5. **资源路径**：在组件中使用 `render.plugin.resources.default` 访问插件资源
+
+---
+
 ### 工具模块 (utils)
 
 工具模块提供了常用的工具函数和渲染功能。
@@ -727,7 +1051,7 @@ MysHosts.hk4e     // 原神 API
 #### 导入方式
 
 ```typescript
-import { common, RenderTemplate } from 'karin-plugin-mys-core/utils'
+import { common } from 'karin-plugin-mys-core/utils'
 ```
 
 #### common 工具函数
@@ -744,101 +1068,6 @@ const obj = common.StrToObj<{ key: string }>('key=value&foo=bar', '&')
 
 // 对象转字符串
 const str = common.ObjToStr({ key: 'value', foo: 'bar' }, '&')
-```
-
-#### RenderTemplate 渲染模板
-
-用于渲染 HTML 模板为图片。
-
-**初始化**
-
-```typescript
-const render = new RenderTemplate<'template1' | 'template2'>({
-  name: 'plugin-name',
-  version: '1.0.0',
-  pluginDir: '/path/to/plugin',
-  ResourcesDir: '/path/to/resources'
-}, {
-  // 自定义插件参数
-  customKey: 'customValue'
-})
-```
-
-**渲染模板**
-
-```typescript
-// 渲染模板
-const image = await render.template(
-  'template1',           // 模板名称
-  { data: 'value' },     // 渲染数据
-  {
-    type: 'jpeg',        // 图片格式: 'png' | 'jpeg' | 'webp'
-    plugin: {},          // 额外插件参数
-    render: {            // 渲染选项
-      setViewport: {
-        deviceScaleFactor: 2
-      }
-    }
-  }
-)
-
-// 返回 base64 格式图片
-console.log(image)  // 'base64://...'
-```
-
-**模板文件结构**
-
-```
-resources/
-  template/
-    template1/
-      index.html
-    template2/
-      index.html
-    layout/
-      default.html
-```
-
-**模板数据**
-
-模板中可使用以下数据：
-
-```javascript
-// 自定义数据
-data.yourData
-
-// 插件信息
-data.plugin.name      // 插件名称
-data.plugin.version   // 插件版本
-data.plugin.template  // 当前模板名称
-data.plugin.resources // 资源路径
-data.plugin.defaultLayout  // 默认布局路径
-
-// Karin 信息
-data.karin.version    // Karin 版本
-```
-
-**示例**
-
-```typescript
-const render = new RenderTemplate<'profile' | 'stats'>({
-  name: 'my-plugin',
-  version: '1.0.0',
-  pluginDir: __dirname,
-  ResourcesDir: path.join(__dirname, 'resources')
-})
-
-// 渲染用户信息
-const img = await render.template('profile', {
-  nickname: '玩家昵称',
-  level: 60,
-  uid: '123456789'
-}, {
-  type: 'png'
-})
-
-// 发送图片
-await e.reply(img)
 ```
 
 ---

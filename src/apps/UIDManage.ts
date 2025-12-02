@@ -1,6 +1,6 @@
-import { Render } from '@/core'
 import { DatabaseReturn, DatabaseType, MysAccountInfoTableType, UidPermission } from '@/exports/database'
 import { GameUserInfoBase, MysGame, UserInfo } from '@/exports/mys'
+import { Render, ShowBindAccountComponent, ShowBindAccountProps } from '@/template'
 import karin, { handler, Message, segment } from 'node-karin'
 
 export const BindUID = karin.command(
@@ -102,21 +102,7 @@ export const UnbindUID = karin.command(
 export const ShowBindAccountCmdFunc = async (e: Message) => {
   const userInfo = await UserInfo.create(e.userId, true)
 
-  const renderData: {
-    User: {
-      userId: string
-      avatar: string
-      nickname: string
-    },
-    AccountList: {
-      ltuid: string
-      permission: UidPermission
-      bindUids: {
-        gameName: string
-        uids: { uid: string, perm: UidPermission }[]
-      }[]
-    }[]
-  } = {
+  const renderData: ShowBindAccountProps = {
     User: {
       userId: e.userId,
       avatar: await e.bot.getAvatarUrl(e.userId, 100),
@@ -159,7 +145,7 @@ export const ShowBindAccountCmdFunc = async (e: Message) => {
     }
   }
 
-  const image = await Render.template('ShowBindAccount', renderData)
+  const image = await Render.template('ShowBindAccount', ShowBindAccountComponent, renderData)
   image && e.reply(segment.image(image), { at: true })
 
   return true

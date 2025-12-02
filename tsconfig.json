@@ -7,6 +7,7 @@
     "outDir": "./lib",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
+    "jsx": "react",
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -16,7 +17,11 @@
     "rootDir": "./src",
     "declaration": true,
     "noImplicitAny": true,
-    "strict": true
+    "strict": true,
+    "types": [
+      "node",
+      "tailwindcss"
+    ]
   },
   "include": [
     "src/**/*",
