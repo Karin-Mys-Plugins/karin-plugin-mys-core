@@ -18,9 +18,8 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
 
   return (
     <div
-      className={`relative flex w-[600px] flex-col pb-10 font-[HYWenHei-55W] text-black ${bgColor}`}
+      className={`relative flex w-[600px] flex-col pb-10 font-hywh text-black ${bgColor}`}
       id='container'
-      style={{ fontFamily: 'HYWenHei-55W, sans-serif' }}
     >
       {children}
 

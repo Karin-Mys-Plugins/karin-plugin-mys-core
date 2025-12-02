@@ -1,3 +1,4 @@
+import { dir } from '@/dir'
 import karin, { config, existToMkdirSync, karinPathBase, Options } from 'node-karin'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -63,7 +64,11 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
     // 渲染 React 组件为 HTML 字符串
     const appHtml = renderToString(element)
 
-    const cssPath = path.join(this.plugin.resources.default, 'styles', `${this.#renderCfg.name}.css`).replace(/\\/g, '/')
+    const coreCssPath = path.join(dir.pluginDir, 'resources', 'styles', `${dir.name}.css`).replace(/\\/g, '/')
+
+    const cssPath = this.#renderCfg.name !== dir.name
+      ? path.join(this.plugin.resources.default, 'styles', `${this.#renderCfg.name}.css`).replace(/\\/g, '/')
+      : ''
 
     const Html = `
     <!DOCTYPE html>
@@ -71,6 +76,7 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="${coreCssPath}">
         <link rel="stylesheet" href="${cssPath}">
       </head>
       <body>

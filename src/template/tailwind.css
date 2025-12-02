@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'HYWenHei-55W';
+  src: url('../../resources/fonts/HYWenHei-55W.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
