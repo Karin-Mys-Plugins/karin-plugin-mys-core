@@ -1,9 +1,9 @@
 import { dir } from '@/dir'
 import { Database } from '../database'
-import { Table } from '../dbs'
+import { createTable } from '../dbs'
 import { DatabaseType, MysAccountInfoTableType, MysAccountType } from '../types'
 
-export const MysAccountInfoTable = new Table<MysAccountInfoTableType, DatabaseType.Db, {}>(
+export const MysAccountInfoTable = createTable<MysAccountInfoTableType>(
   dir.DataDir, 'mys_account_info_data', DatabaseType.Db
 )
 

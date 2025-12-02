@@ -2,7 +2,11 @@ import { Model, ModelAttributeColumnOptions } from 'sequelize'
 import { Database } from '../database'
 import { DatabaseClassInstance, DatabaseType, Dialect } from '../types'
 
-export class Table<TableType extends Record<string, any>, DBType extends DatabaseType, ExtraTableType extends Record<string, any>> {
+export class Table<
+  TableType extends Record<string, any>,
+  ExtraTableType extends Record<string, any> = {},
+  DBType extends DatabaseType = DatabaseType
+> {
   #dialect: Dialect
   #Database: DatabaseClassInstance<TableType, DBType>
 
@@ -58,4 +62,27 @@ export class Table<TableType extends Record<string, any>, DBType extends Databas
 
     return this.#cache<TableType & newTableType>()
   }
+}
+
+export function createTable<
+  TableType extends Record<string, any>,
+  ExtraTableType extends Record<string, any> = {}
+> (DataDir: string, tableName: string, type: DatabaseType.File): Table<TableType, ExtraTableType, DatabaseType.File>
+
+export function createTable<
+  TableType extends Record<string, any>,
+  ExtraTableType extends Record<string, any> = {}
+> (DataDir: string, tableName: string, type: DatabaseType.Dir): Table<TableType, ExtraTableType, DatabaseType.Dir>
+
+export function createTable<
+  TableType extends Record<string, any>,
+  ExtraTableType extends Record<string, any> = {}
+> (DataDir: string, tableName: string, type: DatabaseType.Db): Table<TableType, ExtraTableType, DatabaseType.Db>
+
+export function createTable<
+  TableType extends Record<string, any>,
+  ExtraTableType extends Record<string, any> = {},
+  DBType extends DatabaseType = DatabaseType
+> (DataDir: string, tableName: string, type: DBType): Table<TableType, ExtraTableType, DBType> {
+  return new Table<TableType, ExtraTableType, DBType>(DataDir, tableName, type)
 }

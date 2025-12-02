@@ -1,10 +1,10 @@
 import { dir } from '@/dir'
 import { common } from '@/exports/utils'
 import { Database } from '../database'
-import { Table } from '../dbs'
+import { createTable } from '../dbs'
 import { DatabaseType, MysDeviceInfoTableType } from '../types'
 
-export const MysDeviceInfoTable = new Table<MysDeviceInfoTableType, DatabaseType.Db, {}>(
+export const MysDeviceInfoTable = createTable<MysDeviceInfoTableType>(
   dir.DataDir, 'mys_device_info_data', DatabaseType.Db
 )
 
