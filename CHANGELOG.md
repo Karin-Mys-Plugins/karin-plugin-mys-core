@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.5...v1.0.6) (2025-12-02)
+
+
+### Bug Fixes
+
+* 排除apps中 .d.ts 文件 ([0dbb83d](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/0dbb83d2d94fbc7518913843944b3547247f5888))
+
 ## [1.0.5](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.4...v1.0.5) (2025-12-02)
 
 
