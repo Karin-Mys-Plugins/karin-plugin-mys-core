@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.9](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.8...v1.0.9) (2025-12-03)
+
+
+### Bug Fixes
+
+* css缺失 ([e506937](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/e506937a4f22de56e4f88bcbefb6d65a1e17dfdf))
+
 ## [1.0.8](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.7...v1.0.8) (2025-12-03)
 
 
