@@ -3,20 +3,24 @@ import { existToMkdirSync, json, logger, rmSync } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import fs from 'node:fs'
 import path from 'node:path'
-import { Model, ModelStatic } from 'sequelize'
-import { DatabaseReturn, DatabaseType, ModelAttributes } from '../types'
+import { Model, ModelAttributeColumnOptions, ModelStatic } from 'sequelize'
+import { DatabaseReturn, DatabaseType } from '../types'
 
 export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
+  primaryKey: keyof T | undefined
+
   declare model: ModelStatic<Model>
 
   declare databasePath: string
   declare databaseType: D
 
   declare modelName: string
-  declare modelSchema: ModelAttributes<Model>
+  declare modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>
   declare modelSchemaDefine: Partial<Record<keyof T, any>>
 
-  initBase (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D) {
+  initBase (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T) {
+    this.primaryKey = primaryKey
+
     this.databaseType = type
     this.databasePath = path.join(DataDir, modelName)
     if (type !== DatabaseType.Db) {
@@ -29,11 +33,13 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   }
 
   schemaToJSON (pk: string): T {
+    const primaryKey = this.model.primaryKeyAttribute || this.primaryKey!
+
     const result: Record<string, any> = {
-      [this.model.primaryKeyAttribute]: pk
+      [primaryKey]: pk
     }
     lodash.forEach(this.modelSchema, (value, key) => {
-      if (key !== this.model.primaryKeyAttribute) {
+      if (key !== primaryKey) {
         result[key] = typeof value.defaultValue === 'function' ? value.defaultValue() : value.defaultValue
       }
     })
@@ -65,7 +71,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     const result: Record<string, any> = {
       save: this.saveDir(pk),
       destroy: () => this.destroyPath(pk),
-      [this.model.primaryKeyAttribute]: pk
+      [this.primaryKey!]: pk
     }
     const filePromises = files.map(async (file) => {
       const data = await json.read(`${path}/${file}`)
@@ -83,12 +89,12 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     const path = this.userPath(pk)
 
     lodash.forEach(this.modelSchema, (value, key) => {
-      if (key !== this.model.primaryKeyAttribute) {
+      if (key !== this.primaryKey!) {
         const mergeData = common.filterData(data[key], value.defaultValue, this.modelSchemaDefine[key])
 
         json.writeSync(`${path}/${key}.json`, {
           key,
-          [this.model.primaryKeyAttribute]: pk,
+          [this.primaryKey!]: pk,
           data: mergeData
         })
       }
@@ -103,7 +109,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
       const mergeData = common.filterData(data, this.schemaToJSON(pk), this.modelSchemaDefine)
 
-      delete data[this.model.primaryKeyAttribute]
+      delete data[this.primaryKey!]
 
       json.writeSync(userPath, mergeData)
 
@@ -113,7 +119,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
   saveDir (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.Dir]> {
     return async (data: Partial<T>) => {
-      delete data[this.model.primaryKeyAttribute]
+      delete data[this.primaryKey!]
 
       this.writeDirSync(pk, data)
 

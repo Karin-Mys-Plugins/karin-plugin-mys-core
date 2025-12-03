@@ -1,6 +1,7 @@
 import { common } from '@/exports/utils'
-import { existsSync, logger, requireFileSync, watch, writeJsonSync } from 'node-karin'
+import { existsSync, existToMkdirSync, logger, requireFileSync, watch, writeJsonSync } from 'node-karin'
 import lodash from 'node-karin/lodash'
+import path from 'node:path'
 import { EnhancedArray } from './array'
 
 export class Config<C extends Record<string, any>> {
@@ -22,14 +23,22 @@ export class Config<C extends Record<string, any>> {
   /**
    * @param name 插件名称:配置名称
    */
-  constructor (name: `${string}:${string}`, ConfigPath: string, DefaultConfig: C, DefineConfig: Record<string, any>) {
+  constructor (name: `${string}:${string}`, ConfigDir: string, DefaultConfig: C, DefineConfig: Record<string, any>) {
     this.#cfgName = name
 
-    this.#ConfigPath = ConfigPath
+    const splitName = name.split(':')
+    if (!splitName[1]) {
+      throw new Error('配置名称格式错误，应为 插件名称:配置名称')
+    }
+
+    this.#ConfigPath = path.join(ConfigDir, `${splitName[1]}.json`)
+
     this.#DefaultConfig = DefaultConfig
     this.#DefineConfig = DefineConfig
 
-    !existsSync(ConfigPath) && writeJsonSync(ConfigPath, DefaultConfig)
+    existToMkdirSync(ConfigDir)
+
+    !existsSync(this.#ConfigPath) && writeJsonSync(this.#ConfigPath, DefaultConfig, true)
 
     this.loadConfig()
   }

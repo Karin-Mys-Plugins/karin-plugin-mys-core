@@ -1,4 +1,5 @@
 import lodash from 'node-karin/lodash'
+import { DefineDataArray } from './types'
 
 /**
  * @description 生成随机字符串
@@ -54,17 +55,6 @@ export const StrToObj = <
  */
 export const ObjToStr = (obj: Record<string, string | number>, sep: string) => {
   return Object.entries(obj).filter(([k, v]) => v).map(([k, v]) => `${k}=${v}`).join(sep) + sep
-}
-
-export interface DefineData<T> {
-  defaultConfig: T
-}
-
-export interface DefineDataArray<T> extends DefineData<T[]> {
-  defaultConfigItem: {
-    defaultConfig: T
-    required?: T extends Record<string, any> ? (keyof T)[] : never
-  }
 }
 
 export function filterData (user: any, defaults: any, Define: any) {

@@ -20,11 +20,13 @@ export const enum UidPermission {
   DEL = 4
 }
 
+export interface BindUidsItemType {
+  perm: UidPermission
+  ltuid: string
+}
+
 export type BaseGameUIDInfoTableType<Game extends string> = {
   [P in `${Game}-main`]: string
 } & {
-  [P in `${Game}-uids`]: Partial<Record<string, {
-    perm: UidPermission
-    ltuid: string
-  }>>
+  [P in `${Game}-uids`]: Partial<Record<string, BindUidsItemType>>
 }

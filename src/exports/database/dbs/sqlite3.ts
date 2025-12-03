@@ -3,7 +3,7 @@ import { existsSync, json, logger, mkdirSync, rmSync } from 'node-karin'
 import fs from 'node:fs'
 import path from 'node:path'
 import { DataTypes, Model, ModelAttributeColumnOptions, Op, Sequelize } from 'sequelize'
-import { DatabaseArray, DatabaseClassInstance, DatabaseClassStatic, DatabaseReturn, DatabaseType, Dialect, ModelAttributes } from '../types'
+import { DatabaseArray, DatabaseClassInstance, DatabaseClassStatic, DatabaseReturn, DatabaseType, Dialect } from '../types'
 import { DbBase } from './base'
 
 const dialect = Dialect.Sqlite
@@ -25,8 +25,8 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
     }
   }
 
-  async init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D): Promise<DatabaseClassInstance<T, D>> {
-    this.initBase(DataDir, modelName, modelSchema, modelSchemaDefine, type)
+  async init (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>> {
+    this.initBase(DataDir, modelName, modelSchema, modelSchemaDefine, type, primaryKey)
 
     if (this.databaseType === DatabaseType.Db) {
       this.model = sequelize.define(this.modelName, this.modelSchema, {

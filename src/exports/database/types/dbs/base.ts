@@ -44,6 +44,9 @@ export interface DatabaseReturn<T> {
 export type DatabaseClassInstance<T extends Record<string, any>, D extends DatabaseType> = {
   dialect: Dialect
 
+  /** @description DatabaseType为Db时不使用 */
+  primaryKey: keyof T | undefined
+
   model: ModelStatic<Model>
 
   databasePath: string
@@ -53,7 +56,7 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
   modelName: string
 
   /** @description 表定义 */
-  modelSchema: ModelAttributes<Model>
+  modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>
 
   /** @description 表定义扩展 */
   modelSchemaDefine: Partial<Record<keyof T, any>>
@@ -68,7 +71,8 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
    * @param modelSchema 表定义
    * @param type 数据库类型
    */
-  init (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D): Promise<DatabaseClassInstance<T, D>>
+
+  init (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>>
 
   /** @description 将表定义转换为 JSON 对象 */
   schemaToJSON (pk: string): T
