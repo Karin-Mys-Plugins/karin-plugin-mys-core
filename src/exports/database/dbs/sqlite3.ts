@@ -25,8 +25,8 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
     }
   }
 
-  async init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model>, type: D): Promise<DatabaseClassInstance<T, D>> {
-    this.initBase(DataDir, modelName, modelSchema, type)
+  async init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D): Promise<DatabaseClassInstance<T, D>> {
+    this.initBase(DataDir, modelName, modelSchema, modelSchemaDefine, type)
 
     if (this.databaseType === DatabaseType.Db) {
       this.model = sequelize.define(this.modelName, this.modelSchema, {

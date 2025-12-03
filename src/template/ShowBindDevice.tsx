@@ -1,5 +1,4 @@
-import React from 'react'
-import { DefaultLayoutComponent } from '../../exports/render/layout/DefaultLayout'
+import { DefaultLayoutComponent, React } from '@/exports/render'
 
 export interface ShowBindDeviceProps {
 

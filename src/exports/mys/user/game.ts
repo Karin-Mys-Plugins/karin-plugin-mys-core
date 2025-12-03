@@ -1,5 +1,5 @@
 import { BaseUserInfoTableType } from '@/exports/database'
-import { gameName, GameUserInfoBase, UserGameRoleItemType } from '../types'
+import { BaseltuidInfoType, gameName, GameUserInfoBase, UserGameRoleItemType } from '../types'
 
 export const MysGame = new class MysGame {
   #games = new Map<string, RegisterGameBase<any>>()
@@ -39,22 +39,29 @@ export class RegisterGameBase<GameUserInfoTableType extends BaseUserInfoTableTyp
   /** @description 游戏名称 */
   name: gameName
 
-  /** @description 指令前缀匹配 */
-  prefix: RegExp
+  /** @description 指令前缀 */
+  prefixs: string[]
 
-  refresh: (info: UserGameRoleItemType[]) => string[]
+  refresh: (info: UserGameRoleItemType[], options: { userId: string, cookie: string } & BaseltuidInfoType) => Promise<string[]>
 
   UserInfo: typeof GameUserInfoBase<GameUserInfoTableType>
 
-  constructor (game: string, name: gameName, prefix: RegExp, userInfo: typeof GameUserInfoBase<GameUserInfoTableType>, refreshFuc: (info: UserGameRoleItemType[]) => string[]) {
+  constructor (
+    game: string, name: gameName, prefixs: string[], userInfo: typeof GameUserInfoBase<GameUserInfoTableType>,
+    refreshFuc: (info: UserGameRoleItemType[], options: { userId: string, cookie: string } & BaseltuidInfoType) => Promise<string[]>
+  ) {
     this.game = game
     this.columnKey = `${game}-uids`
 
     this.name = name
-    this.prefix = prefix
+    this.prefixs = prefixs
 
     this.UserInfo = userInfo
 
     this.refresh = refreshFuc
+  }
+
+  get prefix () {
+    return new RegExp(`^(${this.prefixs.join('|')})$`, 'i')
   }
 }

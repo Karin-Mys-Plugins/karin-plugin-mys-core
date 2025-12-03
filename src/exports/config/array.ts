@@ -62,44 +62,40 @@ export class EnhancedArray<T> extends Array<T> {
     return this
   }
 
-  /**
-   * @param predicate - 要删除的元素、删除条件函数或索引
-   * @param save - 是否立即保存
-   * @param isIndex - 当 predicate 为数字时，是否将其视为索引
-   */
-  remove (predicate: T & number, save: boolean, isIndex: true): this
-  remove (predicate: T | ((item: T) => boolean), save: boolean): this
-  remove (predicate: T | ((item: T) => boolean), save: boolean, isIndex: boolean = false): this {
-    if (isIndex && lodash.isNumber(predicate)) {
-      if (predicate < 0 || predicate >= this.length) {
-        logger.error(`索引 ${predicate} 超出范围 [0, ${this.length - 1}]`)
-        return this
-      }
-      lodash.pullAt(this, predicate)
-    } else if (lodash.isFunction(predicate)) {
-      lodash.remove(this as T[], predicate)
-    } else {
-      lodash.pull(this, predicate)
+  /** @description 删除指定索引 */
+  pullAt (idx: number, save: boolean): this {
+    if (idx < 0 || idx >= this.length) {
+      logger.error(`索引 ${idx} 超出范围 [0, ${this.length - 1}]`)
+      return this
     }
+    lodash.pullAt(this, idx)
 
     this.#cfg.set<T[]>(this.#keyPath, this.slice(), save)
 
     return this
   }
 
-  /**
-  * @param predicate - 要删除的元素数组
-  * @param save - 是否立即保存
-  */
-  removeSome (elements: T[], save: boolean): this {
+  /** @description 删除指定元素 */
+  pullAll (elements: T[], save: boolean): this {
     lodash.pullAll(this, elements)
 
     this.#cfg.set<T[]>(this.#keyPath, this.slice(), save)
+
+    return this
+  }
+
+  /** @description 使用条件函数删除元素 */
+  remove (predicate: (item: T) => boolean, save: boolean): this {
+    lodash.remove(this as T[], predicate)
+
+    this.#cfg.set<T[]>(this.#keyPath, this.slice(), save)
+
     return this
   }
 
   clear () {
     this.length = 0
+
     return this
   }
 }

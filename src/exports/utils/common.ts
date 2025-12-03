@@ -55,3 +55,65 @@ export const StrToObj = <
 export const ObjToStr = (obj: Record<string, string | number>, sep: string) => {
   return Object.entries(obj).filter(([k, v]) => v).map(([k, v]) => `${k}=${v}`).join(sep) + sep
 }
+
+export interface DefineData<T> {
+  defaultConfig: T
+}
+
+export interface DefineDataArray<T> extends DefineData<T[]> {
+  defaultConfigItem: {
+    defaultConfig: T
+    required?: T extends Record<string, any> ? (keyof T)[] : never
+  }
+}
+
+export function filterData (user: any, defaults: any, Define: any) {
+  if (Array.isArray(user) && Array.isArray(defaults)) {
+    const DefineArray = Define as DefineDataArray<any> | undefined
+    if (DefineArray?.defaultConfigItem) {
+      const filtered: any[] = []
+      const required = DefineArray.defaultConfigItem.required as string[] | undefined
+
+      user.forEach((value, key) => {
+        // 如果定义了 required，检查元素是否包含所有必需的键
+        if (required && lodash.isPlainObject(value)) {
+          const _value = value as Record<string, any>
+          const hasAllRequired = required.every(requiredKey => requiredKey in _value && _value[requiredKey] !== undefined && _value[requiredKey] !== null && _value[requiredKey] !== '')
+
+          if (!hasAllRequired) return
+        }
+
+        filtered[key] = filterData(value, DefineArray.defaultConfigItem.defaultConfig, DefineArray.defaultConfigItem.defaultConfig)
+      })
+
+      return filtered
+    }
+
+    return user
+  } else if (lodash.isPlainObject(user) && lodash.isPlainObject(defaults)) {
+    const filtered: Record<string, any> = {}
+
+    const _user = user as Record<string, any>
+    const _defaults = defaults as Record<string, any>
+
+    const mergedValue = lodash.merge({}, _defaults, _user)
+
+    const _Define = Define as any
+    if (Define?.defaultConfig) {
+      lodash.forEach(_user, (value, key) => {
+        // 合并用户配置和默认配置，确保动态键也包含完整字段
+        const mergedValue = lodash.merge(Array.isArray(value) ? [] : {}, Define.defaultConfig, value)
+
+        filtered[key] = filterData(mergedValue, Define.defaultConfig, Array.isArray(value) ? _Define : _Define[key])
+      })
+    }
+
+    lodash.forEach(_defaults, (value, key) => {
+      filtered[key] = filterData(mergedValue[key], value, _Define?.[key])
+    })
+
+    return filtered
+  }
+
+  return user
+}

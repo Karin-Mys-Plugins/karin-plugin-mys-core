@@ -1,6 +1,5 @@
-import { DefaultLayoutComponent } from '@/exports/render'
-import React from 'react'
-import { Render } from '../render'
+import { DefaultLayoutComponent, React } from '@/exports/render'
+import { Render } from '.'
 
 export interface UidInfo {
   uid: string

@@ -16,6 +16,7 @@ export class Table<
 
   declare initCache: DatabaseClassInstance<TableType, DBType>
   declare modelSchema: Record<keyof TableType, ModelAttributeColumnOptions<Model>>
+  declare modelSchemaDefine: Partial<Record<keyof TableType, any>>
 
   /**
    * @param type Db: 直接保存在sqlite数据中、 File: 保存在单个json文件中、 Dir: 保存在多个json文件的目录中、Schema中除pk外每一个键值对应一个文件 e.g tableName/user/key.json
@@ -43,21 +44,23 @@ export class Table<
     }
   }
 
-  async init (Schema: Record<keyof TableType, ModelAttributeColumnOptions<Model>>) {
+  async init (Schema: Record<keyof TableType, ModelAttributeColumnOptions<Model>>, SchemaDefine: Partial<Record<keyof TableType, any>> = {}) {
     this.modelSchema = Schema
+    this.modelSchemaDefine = SchemaDefine
 
     this.initCache = await this.#Database.init(
-      this.#DataDir, this.#tableName, this.modelSchema, this.#type
+      this.#DataDir, this.#tableName, this.modelSchema, this.modelSchemaDefine, this.#type
     )
 
     return this.#cache<TableType>()
   }
 
-  async addSchem<newTableType extends ExtraTableType> (newSchema: Record<keyof newTableType, ModelAttributeColumnOptions<Model>>) {
+  async addSchem<newTableType extends ExtraTableType> (newSchema: Record<keyof newTableType, ModelAttributeColumnOptions<Model>>, SchemaDefine: Partial<Record<keyof newTableType, any>> = {}) {
     this.modelSchema = Object.assign(this.modelSchema, newSchema)
+    this.modelSchemaDefine = Object.assign(this.modelSchemaDefine, SchemaDefine)
 
     this.initCache = await this.#Database.init(
-      this.#DataDir, this.#tableName, this.modelSchema, this.#type
+      this.#DataDir, this.#tableName, this.modelSchema, this.modelSchemaDefine, this.#type
     )
 
     return this.#cache<TableType & newTableType>()

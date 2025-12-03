@@ -1,3 +1,4 @@
+import { common } from '@/exports/utils'
 import { existToMkdirSync, json, logger, rmSync } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import fs from 'node:fs'
@@ -13,8 +14,9 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
   declare modelName: string
   declare modelSchema: ModelAttributes<Model>
+  declare modelSchemaDefine: Partial<Record<keyof T, any>>
 
-  initBase (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model>, type: D) {
+  initBase (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D) {
     this.databaseType = type
     this.databasePath = path.join(DataDir, modelName)
     if (type !== DatabaseType.Db) {
@@ -23,6 +25,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
     this.modelName = modelName
     this.modelSchema = modelSchema
+    this.modelSchemaDefine = modelSchemaDefine
   }
 
   schemaToJSON (pk: string): T {
@@ -78,27 +81,31 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
   writeDirSync (pk: string, data: Record<string, any>) {
     const path = this.userPath(pk)
+
     lodash.forEach(this.modelSchema, (value, key) => {
       if (key !== this.model.primaryKeyAttribute) {
-        const result = {
+        const mergeData = common.filterData(data[key], value.defaultValue, this.modelSchemaDefine[key])
+
+        json.writeSync(`${path}/${key}.json`, {
           key,
           [this.model.primaryKeyAttribute]: pk,
-          data: data[key] || value.defaultValue
-        }
-        json.writeSync(`${path}/${key}.json`, result)
+          data: mergeData
+        })
       }
     })
+
     return true
   }
 
   saveFile (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.File]> {
     return async (data: Partial<T>) => {
-      delete data[this.model.primaryKeyAttribute]
-
-      const defData = this.schemaToJSON(pk)
       const userPath = this.userPath(pk)
 
-      json.writeSync(userPath, lodash.merge({}, defData, data))
+      const mergeData = common.filterData(data, this.schemaToJSON(pk), this.modelSchemaDefine)
+
+      delete data[this.model.primaryKeyAttribute]
+
+      json.writeSync(userPath, mergeData)
 
       return this.readSync(userPath, pk)
     }
@@ -134,13 +141,16 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     return async (data: Partial<T>) => {
       delete data[this.model.primaryKeyAttribute]
 
-      for (const key in data) {
-        if (data[key] === undefined) {
-          delete data[key]
-        }
-      }
+      const defData = this.schemaToJSON(pk)
 
-      const result = await model.update(data)
+      const mergeData: Partial<T> = {}
+      lodash.forEach(data, (value, key: keyof T) => {
+        if (value !== undefined && value !== null) {
+          mergeData[key] = common.filterData(value, defData[key], this.modelSchemaDefine[key])
+        }
+      })
+
+      const result = await model.update(mergeData)
 
       return {
         ...result.toJSON<T>(),

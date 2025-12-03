@@ -244,16 +244,17 @@ const BindCookie = async (userId: string, cookieObj: CookieParamsType, perm: Uid
 
   const cookieStr = common.ObjToStr(cookieParams, ';')
 
+  const userInfo = await UserInfo.create(userId)
+
   const uidList: RefreshUidResultType = await (async () => {
     const errMsg = []
     for (const serv of Serv ? [Serv] : [MysAccountType.cn, MysAccountType.os]) {
       const result = await UserInfo.refreshUid({
-        userId, type: serv, ltuid, cookie: cookieStr, deviceMd5: ''
+        userId, type: serv, ltuid, cookie: cookieStr, deviceMd5: userInfo.deviceList[0] || ''
       }, perm)
 
-      if (!result.message) {
-        return result
-      }
+      if (!result.message) return result
+
       errMsg.push(result.message)
     }
 
@@ -277,8 +278,6 @@ const BindCookie = async (userId: string, cookieObj: CookieParamsType, perm: Uid
       return `绑定Cookie失败：${userFullInfo?.message || 'Cookie错误'}`
     }
   }
-
-  const userInfo = await UserInfo.create(userId)
 
   await userInfo.saveUserInfo({
     ...uidList.uids.reduce((acc, cur) => {

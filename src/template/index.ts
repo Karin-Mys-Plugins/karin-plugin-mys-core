@@ -1,5 +1,7 @@
-export * from '../exports/render/layout/DefaultLayout'
-export * from './ShowBindAccount/ShowBindAccount'
-export * from './ShowBindDevice/ShowBindDevice'
+export * from './ShowBindAccount'
+export * from './ShowBindDevice'
 
-export * from './render'
+import { dir } from '@/dir'
+import { ReactRender } from '@/exports/render'
+
+export const Render = new ReactRender<{}, string>(dir, {})

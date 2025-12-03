@@ -1,3 +1,4 @@
+import { common } from '@/exports/utils'
 import { existsSync, logger, requireFileSync, watch, writeJsonSync } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import { EnhancedArray } from './array'
@@ -45,55 +46,9 @@ export class Config<C extends Record<string, any>> {
     return mergedConfig
   }
 
-  mergeWithDefaults (userConfig: Record<string, any>, defaultConfig: Record<string, any>, IgnoreConfig: Record<string, any>): C {
-    // 递归函数，用于过滤掉用户配置中不存在于默认配置的字段
-    const filterUserConfig = (user: any, defaults: any, Ignore: any): any => {
-      if (Array.isArray(user) && Array.isArray(defaults)) {
-        if (Ignore?.defaultConfigItem) {
-          const filtered: any[] = []
-          const required = Ignore.defaultConfigItem.required as string[] | undefined
-
-          user.forEach((value, key) => {
-            // 如果定义了 required，检查元素是否包含所有必需的键
-            if (required && lodash.isPlainObject(value)) {
-              const hasAllRequired = required.every(requiredKey => requiredKey in value && value[requiredKey] !== undefined && value[requiredKey] !== null && value[requiredKey] !== '')
-
-              if (!hasAllRequired) return
-            }
-
-            filtered[key] = filterUserConfig(value, Ignore.defaultConfigItem.defaultConfig, Ignore.defaultConfigItem.defaultConfig)
-          })
-
-          return filtered
-        }
-
-        return user
-      } else if (lodash.isPlainObject(user) && lodash.isPlainObject(defaults)) {
-        const filtered: Record<string, any> = {}
-
-        const mergedValue = lodash.merge({}, defaults, user)
-
-        if (Ignore?.defaultConfig) {
-          lodash.forEach(user, (value, key) => {
-            // 合并用户配置和默认配置，确保动态键也包含完整字段
-            const mergedValue = lodash.merge(Array.isArray(value) ? [] : {}, Ignore.defaultConfig, value)
-
-            filtered[key] = filterUserConfig(mergedValue, Ignore.defaultConfig, Array.isArray(value) ? Ignore : Ignore[key])
-          })
-        }
-
-        lodash.forEach(defaults, (value, key) => {
-          filtered[key] = filterUserConfig(mergedValue[key], value, Ignore?.[key])
-        })
-
-        return filtered
-      }
-
-      return user
-    }
-
+  mergeWithDefaults (userConfig: C, defaultConfig: C, DefineConfig: Record<string, any>): C {
     // 先过滤用户配置，只保留默认配置中定义的字段
-    const filteredUserConfig = filterUserConfig(userConfig, defaultConfig, IgnoreConfig)
+    const filteredUserConfig = common.filterData(userConfig, defaultConfig, DefineConfig)
 
     // 然后合并配置
     const result = lodash.merge({}, defaultConfig, filteredUserConfig)

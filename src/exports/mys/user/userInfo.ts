@@ -1,5 +1,6 @@
 import { BaseUserInfoTableType, DatabaseReturn, DatabaseType, MysAccountInfoDB, MysAccountInfoTableType, MysAccountType, MysDeviceInfoDB, MysUserInfoDB, UidPermission } from '@/exports/database'
 import { getCookieTokenBySToken, getUserGameRolesByCookie } from '@/exports/mys'
+import lodash from 'node-karin/lodash'
 import { BaseltuidInfoType, CookieParamsType, GameUserInfoBase, RefreshUidResultType, StokenParamsType } from '../types'
 import { MysGame } from './game'
 
@@ -99,11 +100,11 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
     const uids: RefreshUidResultType['uids'] = []
 
     if (MysGame.num > 0) {
-      const res = (await getUserGameRolesByCookie.init(options).request(null)).data
+      const res = (await (await getUserGameRolesByCookie.initDevice(options)).request(null)).data
 
       if (res?.retcode === 0) {
         await MysGame.forEachGame(async Game => {
-          const uidList = Game.refresh(res.data.list)
+          const uidList = new Set(await Game.refresh(res.data.list, options))
 
           const userInfo = await Game.UserInfo.create(options.userId)
           const bindUids = userInfo.bind_uids
@@ -111,6 +112,14 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
             if (!(uid in bindUids) || bindUids[uid]!.perm < perm) {
               bindUids[uid] = {
                 perm, ltuid: options.ltuid
+              }
+            }
+          })
+
+          lodash.forEach(bindUids, (info, uid) => {
+            if (!uidList.has(uid) && info?.ltuid === options.ltuid) {
+              bindUids[uid] = {
+                perm: UidPermission.BIND, ltuid: ''
               }
             }
           })

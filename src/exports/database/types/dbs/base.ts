@@ -55,6 +55,9 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
   /** @description 表定义 */
   modelSchema: ModelAttributes<Model>
 
+  /** @description 表定义扩展 */
+  modelSchemaDefine: Partial<Record<keyof T, any>>
+
   /** @description 检查数据库是否可用 */
   check (): Promise<boolean>
 
@@ -65,7 +68,7 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
    * @param modelSchema 表定义
    * @param type 数据库类型
    */
-  init (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, type: D): Promise<DatabaseClassInstance<T, D>>
+  init (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D): Promise<DatabaseClassInstance<T, D>>
 
   /** @description 将表定义转换为 JSON 对象 */
   schemaToJSON (pk: string): T
