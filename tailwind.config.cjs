@@ -1,5 +1,6 @@
 module.exports = {
   content: [
+    './src/exportsrenderlayout/*.{js,jsx,ts,tsx}',
     './src/template/**/*.{js,jsx,ts,tsx}',
   ],
   theme: {
