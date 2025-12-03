@@ -107,9 +107,10 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
           const uidList = new Set(await Game.refresh(res.data.list, options))
 
           const userInfo = await Game.UserInfo.create(options.userId)
+
           const bindUids = userInfo.bind_uids
           uidList.forEach(uid => {
-            if (!(uid in bindUids) || bindUids[uid]!.perm < perm) {
+            if (!bindUids[uid] || bindUids[uid]!.perm < perm) {
               bindUids[uid] = {
                 perm, ltuid: options.ltuid
               }

@@ -3,22 +3,22 @@ import { existToMkdirSync, json, logger, rmSync } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import fs from 'node:fs'
 import path from 'node:path'
-import { Model, ModelAttributeColumnOptions, ModelStatic } from 'sequelize'
-import { DatabaseReturn, DatabaseType } from '../types'
+import { Model, ModelStatic } from 'sequelize'
+import { DatabaseReturn, DatabaseType, ModelAttributes } from '../types'
 
 export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   primaryKey: keyof T | undefined
 
-  declare model: ModelStatic<Model>
+  declare model: ModelStatic<Model> | undefined
 
   declare databasePath: string
   declare databaseType: D
 
   declare modelName: string
-  declare modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>
+  declare modelSchema: ModelAttributes<Model, T>
   declare modelSchemaDefine: Partial<Record<keyof T, any>>
 
-  initBase (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T) {
+  initBase (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model, T>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T) {
     this.primaryKey = primaryKey
 
     this.databaseType = type
@@ -33,14 +33,15 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   }
 
   schemaToJSON (pk: string): T {
-    const primaryKey = this.model.primaryKeyAttribute || this.primaryKey!
+    const primaryKey = this.model?.primaryKeyAttribute || this.primaryKey!
 
     const result: Record<string, any> = {
       [primaryKey]: pk
     }
     lodash.forEach(this.modelSchema, (value, key) => {
       if (key !== primaryKey) {
-        result[key] = typeof value.defaultValue === 'function' ? value.defaultValue() : value.defaultValue
+        const Value = typeof value.defaultValue === 'function' ? value.defaultValue() : value.defaultValue
+        result[key] = value.JsonColumn ? JSON.parse(Value) : value.ArrayColumn ? Value.split(',') : Value
       }
     })
 
@@ -145,7 +146,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
   saveSql (model: Model<any, any>, pk: string): (data: Partial<T>) => Promise<DatabaseReturn<T>[DatabaseType.Db]> {
     return async (data: Partial<T>) => {
-      delete data[this.model.primaryKeyAttribute]
+      delete data[this.model!.primaryKeyAttribute]
 
       const defData = this.schemaToJSON(pk)
 
@@ -168,7 +169,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
   destroySql (pk: string): Promise<boolean> {
     return new Promise((resolve) => {
-      const result = this.model.destroy({ where: { [this.model.primaryKeyAttribute]: pk } })
+      const result = this.model!.destroy({ where: { [this.model!.primaryKeyAttribute]: pk } })
         .then(count => count > 0).catch(() => false)
 
       resolve(result)

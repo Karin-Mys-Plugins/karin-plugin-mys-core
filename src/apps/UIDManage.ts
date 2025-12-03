@@ -21,7 +21,7 @@ export const BindUID = karin.command(
     const userInfo = await Game.UserInfo.create(e.userId)
 
     const bindUids = userInfo.bind_uids
-    if (!(uid in bindUids)) {
+    if (!bindUids[uid]) {
       bindUids[uid] = { perm: UidPermission.BIND, ltuid: '' }
     }
 
@@ -75,7 +75,7 @@ export const UnbindUID = karin.command(
 
       delUid = filterUids[idx - 1][0]
     }
-    if (delUid in bindUids) {
+    if (bindUids[delUid]) {
       if (bindUids[delUid]!.perm === UidPermission.BIND) {
         delete bindUids[delUid]
       } else {

@@ -1,6 +1,6 @@
-import { Model, ModelAttributeColumnOptions } from 'sequelize'
+import { Model } from 'sequelize'
 import { Database } from '../database'
-import { DatabaseClassInstance, DatabaseType, Dialect } from '../types'
+import { DatabaseClassInstance, DatabaseType, Dialect, ModelAttributes } from '../types'
 
 export class Table<
   TableType extends Record<string, any>,
@@ -17,7 +17,7 @@ export class Table<
   #primaryKey: keyof TableType | undefined
 
   declare initCache: DatabaseClassInstance<TableType, DBType>
-  declare modelSchema: Record<keyof TableType, ModelAttributeColumnOptions<Model>>
+  declare modelSchema: ModelAttributes<Model, TableType>
   declare modelSchemaDefine: Partial<Record<keyof TableType, any>>
 
   /**
@@ -48,7 +48,7 @@ export class Table<
     }
   }
 
-  async init (Schema: Record<keyof TableType, ModelAttributeColumnOptions<Model>>, SchemaDefine: Partial<Record<keyof TableType, any>> = {}) {
+  async init (Schema: ModelAttributes<Model, TableType>, SchemaDefine: Partial<Record<keyof TableType, any>> = {}) {
     this.modelSchema = Schema
     this.modelSchemaDefine = SchemaDefine
 
@@ -59,7 +59,7 @@ export class Table<
     return this.#cache<TableType>()
   }
 
-  async addSchem<newTableType extends ExtraTableType> (newSchema: Record<keyof newTableType, ModelAttributeColumnOptions<Model>>, SchemaDefine: Partial<Record<keyof newTableType, any>> = {}) {
+  async addSchem<newTableType extends ExtraTableType> (newSchema: ModelAttributes<Model, newTableType>, SchemaDefine: Partial<Record<keyof newTableType, any>> = {}) {
     this.modelSchema = Object.assign(this.modelSchema, newSchema)
     this.modelSchemaDefine = Object.assign(this.modelSchemaDefine, SchemaDefine)
 

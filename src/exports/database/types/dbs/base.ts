@@ -23,7 +23,7 @@ export type ModelAttributes<M extends Model = Model, TAttributes = any> = {
   /**
    * The description of a database column
    */
-  [name in keyof TAttributes]: ModelAttributeColumnOptions<M>
+  [name in keyof TAttributes]: ModelAttributeColumnOptions<M> & { ArrayColumn?: true, JsonColumn?: true }
 }
 
 export interface DatabaseReturn<T> {
@@ -47,7 +47,7 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
   /** @description DatabaseType为Db时不使用 */
   primaryKey: keyof T | undefined
 
-  model: ModelStatic<Model>
+  model: ModelStatic<Model> | undefined
 
   databasePath: string
   databaseType: D
@@ -56,7 +56,7 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
   modelName: string
 
   /** @description 表定义 */
-  modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>
+  modelSchema: ModelAttributes<Model, T>
 
   /** @description 表定义扩展 */
   modelSchemaDefine: Partial<Record<keyof T, any>>
@@ -72,7 +72,7 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
    * @param type 数据库类型
    */
 
-  init (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>>
+  init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model, T>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>>
 
   /** @description 将表定义转换为 JSON 对象 */
   schemaToJSON (pk: string): T
@@ -129,11 +129,11 @@ export interface DatabaseClassStatic {
 
   ArrayColumn<T> (
     key: string, fn?: (data: DatabaseArray<T>) => T[]
-  ): ModelAttributeColumnOptions<Model>
+  ): ModelAttributeColumnOptions<Model> & { ArrayColumn: true }
 
   JsonColumn<T extends Record<string, any>> (
     key: string, def: T
-  ): ModelAttributeColumnOptions<Model>
+  ): ModelAttributeColumnOptions<Model> & { JsonColumn: true }
 }
 
 export class DatabaseArray<T> extends Array<T> {

@@ -3,7 +3,7 @@ import { existsSync, json, logger, mkdirSync, rmSync } from 'node-karin'
 import fs from 'node:fs'
 import path from 'node:path'
 import { DataTypes, Model, ModelAttributeColumnOptions, Op, Sequelize } from 'sequelize'
-import { DatabaseArray, DatabaseClassInstance, DatabaseClassStatic, DatabaseReturn, DatabaseType, Dialect } from '../types'
+import { DatabaseArray, DatabaseClassInstance, DatabaseClassStatic, DatabaseReturn, DatabaseType, Dialect, ModelAttributes } from '../types'
 import { DbBase } from './base'
 
 const dialect = Dialect.Sqlite
@@ -25,7 +25,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
     }
   }
 
-  async init (DataDir: string, modelName: string, modelSchema: Record<keyof T, ModelAttributeColumnOptions<Model>>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>> {
+  async init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model, T>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>> {
     this.initBase(DataDir, modelName, modelSchema, modelSchemaDefine, type, primaryKey)
 
     if (this.databaseType === DatabaseType.Db) {
@@ -89,9 +89,9 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
         return this.readSync(path, pk) as DatabaseReturn<T>[D]
       }
     } else {
-      let result = await this.model.findByPk(pk)
+      let result = await this.model!.findByPk(pk)
       if (!result && create) {
-        result = await this.model.create(this.schemaToJSON(pk))
+        result = await this.model!.create(this.schemaToJSON(pk))
       }
       if (!result) return undefined
 
@@ -119,16 +119,16 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
 
       return result
     } else {
-      const result = await this.model.findAll({
+      const result = await this.model!.findAll({
         where: {
-          [this.model.primaryKeyAttribute]: pks
+          [this.model!.primaryKeyAttribute]: pks
         }
       })
 
       return result.map((item) => ({
         ...item.toJSON<T>(),
-        save: this.saveSql(item, item[this.model.primaryKeyAttribute as keyof Model<any, any>]),
-        destroy: () => this.destroySql(item[this.model.primaryKeyAttribute as keyof Model<any, any>])
+        save: this.saveSql(item, item[this.model!.primaryKeyAttribute as keyof Model<any, any>]),
+        destroy: () => this.destroySql(item[this.model!.primaryKeyAttribute as keyof Model<any, any>])
       }))
     }
   }
@@ -163,15 +163,15 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
       return result
     } else {
       const whereClause = excludePks && excludePks.length > 0
-        ? { [this.model.primaryKeyAttribute]: { [Op.notIn]: excludePks } }
+        ? { [this.model!.primaryKeyAttribute]: { [Op.notIn]: excludePks } }
         : {}
 
-      const result = await this.model.findAll({ where: whereClause })
+      const result = await this.model!.findAll({ where: whereClause })
 
       return result.map((item) => ({
         ...item.toJSON<T>(),
-        save: this.saveSql(item, item[this.model.primaryKeyAttribute as keyof Model<any, any>]),
-        destroy: () => this.destroySql(item[this.model.primaryKeyAttribute as keyof Model<any, any>])
+        save: this.saveSql(item, item[this.model!.primaryKeyAttribute as keyof Model<any, any>]),
+        destroy: () => this.destroySql(item[this.model!.primaryKeyAttribute as keyof Model<any, any>])
       }))
     }
   }
@@ -182,8 +182,8 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
 
       return true
     } else {
-      const destroyed = await this.model.destroy({
-        where: { [this.model.primaryKeyAttribute]: pk }
+      const destroyed = await this.model!.destroy({
+        where: { [this.model!.primaryKeyAttribute]: pk }
       })
 
       return destroyed > 0
@@ -207,8 +207,9 @@ export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassSta
 
   ArrayColumn<T> (
     key: string, fn?: (data: DatabaseArray<T>) => T[]
-  ): ModelAttributeColumnOptions<Model> {
+  ): ModelAttributeColumnOptions<Model> & { ArrayColumn: true } {
     return {
+      ArrayColumn: true,
       type: DataTypes.STRING,
       defaultValue: [].join(','),
       get (): DatabaseArray<T> {
@@ -224,8 +225,9 @@ export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassSta
 
   JsonColumn<T> (
     key: string, def: T
-  ): ModelAttributeColumnOptions<Model> {
+  ): ModelAttributeColumnOptions<Model> & { JsonColumn: true } {
     return {
+      JsonColumn: true,
       type: DataTypes.STRING,
       defaultValue: JSON.stringify(def),
       get (): T {

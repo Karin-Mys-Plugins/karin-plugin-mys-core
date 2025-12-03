@@ -14,7 +14,7 @@ export const MiHoYoLoginQRCode = karin.command(
     if (qrcode) {
       if (qrcode === true) return true
 
-      e.reply(['请使用米游社扫码登录', qrcode], {
+      e.reply(['请使用米游社扫码登录', segment.image(qrcode)], {
         at: true, recallMsg: 60
       })
 
