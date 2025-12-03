@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.8](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.7...v1.0.8) (2025-12-03)
+
+
+### Bug Fixes
+
+* 优化Config ([0653b4d](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/0653b4db7bbbc4a7036f7ff48ef8e14ce5f16ce8))
+* 优化Table ([bff7fad](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/bff7fadf162bb4f55665ba70d8de30bf125cc632))
+* 优化初始化配置、Database ([5d601b2](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/5d601b2acb556f0c2ed9bc7fde9f110afb3d0419))
+* 数据库初始化值错误 ([8b8b3fd](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/8b8b3fd79abe096117100d39d3778f181cccd9b2))
+
 ## [1.0.7](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.6...v1.0.7) (2025-12-02)
 
 
