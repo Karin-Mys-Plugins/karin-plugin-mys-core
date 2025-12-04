@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.12](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.11...v1.0.12) (2025-12-04)
+
+
+### Bug Fixes
+
+* 图片使用webp格式 ([a7f9b04](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/a7f9b04e4f5c365960665fe0bd0735a432cf33eb))
+
 ## [1.0.11](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.10...v1.0.11) (2025-12-04)
 
 
