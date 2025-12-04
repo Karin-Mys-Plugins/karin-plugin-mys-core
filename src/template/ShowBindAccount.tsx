@@ -37,8 +37,8 @@ export const ShowBindAccountComponent: React.FC<ShowBindAccountProps> = ({
   const plugin = Render.plugin
 
   return (
-    <DefaultLayoutComponent bgColor='bg-[#f6f0e6]'>
-      <div className='px-[18px] pb-9 pt-5'>
+    <DefaultLayoutComponent bg='bg-[#f6f0e6]' width='w-[600px]'>
+      <div className='w-full px-[18px] pb-9 pt-5'>
         {/* 右上角装饰 logo */}
         <div
           className='absolute -top-2.5 right-0 z-[5] h-[72px] w-[150px] bg-contain bg-center bg-no-repeat opacity-50'
@@ -64,7 +64,7 @@ export const ShowBindAccountComponent: React.FC<ShowBindAccountProps> = ({
                   {/* 标题栏 */}
                   <div className='relative flex items-center justify-between gap-2'>
                     <span className='flex text-sm font-semibold text-[#3f7dd1]'>
-                      MYS UID ({idx + 1})：{account.ltuid}
+                      MYS UID ( {idx + 1} )：{account.ltuid}
                     </span>
 
                     <div className='flex items-center gap-2'>
@@ -99,7 +99,7 @@ export const ShowBindAccountComponent: React.FC<ShowBindAccountProps> = ({
                         {bindUid.uids.map((info) => (
                           <span
                             key={info.uid}
-                            className={`relative flex items-center justify-center overflow-visible break-all rounded-lg bg-black/[0.06] px-2 py-1.5 text-[13px] font-semibold text-[#111] ${
+                            className={`relative flex items-center justify-center overflow-visible break-all rounded-lg bg-black/[0.06] px-2 py-1.5 text-[13px] font-semibold text-[#34bc5b] ${
                               info.perm === 4
                                 ? 'text-black/60 after:absolute after:left-[8%] after:right-[8%] after:top-1/2 after:h-px after:rounded-sm after:bg-[#d32f2f] after:-translate-y-1/2'
                                 : ''

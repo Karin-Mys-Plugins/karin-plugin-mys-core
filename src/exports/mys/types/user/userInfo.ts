@@ -31,6 +31,7 @@ export interface UserGameRoleItemType {
   game_biz: string
   region: string
   game_uid: string
+  level: number
   nickname: string
   is_chosen: boolean
 }

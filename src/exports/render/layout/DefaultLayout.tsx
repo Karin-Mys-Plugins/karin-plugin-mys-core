@@ -4,7 +4,8 @@ import React from 'react'
 
 export interface DefaultLayoutProps {
   children: React.ReactNode
-  bgColor: string
+  bg: string
+  width: string
   mysPlugin?:{
     name: string
     version: string
@@ -13,13 +14,13 @@ export interface DefaultLayoutProps {
 }
 
 export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
-  children, bgColor, mysPlugin
+  children, bg, width, mysPlugin
 }) => {
   const karinVersion = config.pkg().version
 
   return (
     <div
-      className={`relative flex w-[600px] flex-col pb-10 font-hywh text-black ${bgColor}`}
+      className={`relative flex ${width} flex-col pb-10 font-hywh text-black ${bg}`}
       id='container'
     >
       {children}
