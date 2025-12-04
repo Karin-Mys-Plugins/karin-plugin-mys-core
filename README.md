@@ -878,7 +878,7 @@ const UserCard: React.FC<UserCardProps> = ({ username, level, avatar }) => {
       <p>等级: {level}</p>
       <p>主题: {plugin.theme}</p>
       {/* 使用插件资源 */}
-      <img src={`${plugin.resources.default}/image/icon.png`} />
+      <img src={`${plugin.resources.default}/image/icon.webp`} />
     </div>
   )
 }

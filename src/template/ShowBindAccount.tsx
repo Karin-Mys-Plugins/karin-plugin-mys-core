@@ -42,7 +42,7 @@ export const ShowBindAccountComponent: React.FC<ShowBindAccountProps> = ({
         {/* 右上角装饰 logo */}
         <div
           className='absolute -top-2.5 right-0 z-[5] h-[72px] w-[150px] bg-contain bg-center bg-no-repeat opacity-50'
-          style={{ backgroundImage: `url('${plugin.resources.default}/image/mys-logo.png')` }}
+          style={{ backgroundImage: `url('${plugin.resources.default}/image/mys-logo.webp')` }}
         />
 
         {/* 用户信息 */}
@@ -90,7 +90,7 @@ export const ShowBindAccountComponent: React.FC<ShowBindAccountProps> = ({
                       {/* 游戏图标 */}
                       <img
                         className='flex w-10 items-center justify-center rounded-[10px]'
-                        src={`${plugin.resources.default}/image/launcher-icon/${bindUid.gameName}.png`}
+                        src={`${plugin.resources.default}/image/launcher-icon/${bindUid.gameName}.webp`}
                         alt={bindUid.gameName}
                       />
 

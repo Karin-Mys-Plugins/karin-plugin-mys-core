@@ -49,7 +49,7 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
 
         <div className='flex items-center gap-2'>
           <img
-            src={`${dir.pluginDir}/resources/image/mys-core-logo.png`}
+            src={`${dir.pluginDir}/resources/image/mys-core-logo.webp`}
             alt='MysCore Logo'
             className='h-6 w-6 rounded-sm'
           />
@@ -66,7 +66,7 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
 
         <div className='flex items-center gap-2'>
           <img
-            src={`${dir.pluginDir}/resources/image/frame-logo.png`}
+            src={`${dir.pluginDir}/resources/image/frame-logo.webp`}
             alt='Karin Logo'
             className='h-6 w-6 rounded-sm'
           />
