@@ -1,5 +1,5 @@
 import { dir } from '@/dir'
-import karin, { config, existToMkdirSync, karinPathBase, Options } from 'node-karin'
+import karin, { absPath, config, existToMkdirSync, karinPathBase, Options } from 'node-karin'
 import fs from 'node:fs'
 import path from 'node:path'
 import React from 'react'
@@ -43,8 +43,8 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
       name: this.#renderCfg.name,
       version: this.#renderCfg.version,
       resources: {
-        default: path.join(this.#renderCfg.pluginDir, 'resources').replace(/\\/g, '/'),
-        download: this.#renderCfg.ResourcesDir.replace(/\\/g, '/'),
+        default: absPath(path.join(this.#renderCfg.pluginDir, 'resources')),
+        download: absPath(this.#renderCfg.ResourcesDir),
       },
     }
   }
@@ -64,10 +64,10 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
     // 渲染 React 组件为 HTML 字符串
     const appHtml = renderToString(element)
 
-    const coreCssPath = path.join(dir.pluginDir, 'resources', 'styles', `${dir.name}.css`).replace(/\\/g, '/')
+    const coreCssPath = absPath(path.join(dir.pluginDir, 'resources', 'styles', `${dir.name}.css`))
 
     const cssPath = this.#renderCfg.name !== dir.name
-      ? path.join(this.plugin.resources.default, 'styles', `${this.#renderCfg.name}.css`).replace(/\\/g, '/')
+      ? absPath(path.join(this.plugin.resources.default, 'styles', `${this.#renderCfg.name}.css`))
       : ''
 
     const Html = `
@@ -88,7 +88,7 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
     const saveDir = path.join(karinPathBase, 'temp', 'html', this.#renderCfg.name, template)
     existToMkdirSync(saveDir)
 
-    const savePath = path.join(saveDir, `${options.render?.name || template}-${common.randomString(8, 'Lower')}.html`).replace(/\\/g, '/')
+    const savePath = path.join(saveDir, `${options.render?.name || template}-${common.randomString(8, 'Lower')}.html`)
     fs.writeFileSync(savePath, Html, 'utf-8')
 
     const image = await karin.render({
@@ -100,7 +100,7 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
       },
       ...(options.render || {}),
 
-      file: savePath
+      file: absPath(savePath)
     })
 
     if (!image) return null
