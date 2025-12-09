@@ -21,6 +21,11 @@
     "pub": "npm publish --access public"
   },
   "exports": {
+    "./core": {
+      "types": "./lib/core/index.d.ts",
+      "development": "./src/core/index.ts",
+      "default": "./lib/core/index.js"
+    },
     "./config": {
       "types": "./lib/exports/config/index.d.ts",
       "development": "./src/exports/config/index.ts",
