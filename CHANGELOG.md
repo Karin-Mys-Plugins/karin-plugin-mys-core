@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.13](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.12...v1.0.13) (2025-12-09)
+
+
+### Bug Fixes
+
+* 添加export ([b9b1e8f](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/b9b1e8f2e229cd60bca3052a4bb41c015bf3803c))
+
 ## [1.0.12](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.11...v1.0.12) (2025-12-09)
 
 
