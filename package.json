@@ -61,7 +61,7 @@
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
-    "@karinjs/plugin-puppeteer": "^1.0.21",
+    "@karinjs/plugin-puppeteer": "^1.1.2",
     "@types/express": "^5.0.1",
     "@types/lodash": "^4.17.16",
     "@types/md5": "^2.3.5",
