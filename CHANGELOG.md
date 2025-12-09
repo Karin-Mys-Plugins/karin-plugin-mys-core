@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.12](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.11...v1.0.12) (2025-12-09)
+
+
+### Bug Fixes
+
+* 图片使用webp格式 ([a7f9b04](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/a7f9b04e4f5c365960665fe0bd0735a432cf33eb))
+* 添加配置、使用 absPath标准化文件路径、优化编译 ([a0f0054](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/a0f0054cce2f175dc259558da3b456bbd070f6ad))
+
 ## [1.0.11](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.10...v1.0.11) (2025-12-04)
 
 
