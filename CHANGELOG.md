@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.15](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.14...v1.0.15) (2025-12-10)
+
+
+### Bug Fixes
+
+* 添加切换UID命令 ([ed97c86](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/ed97c863970eab20e38c41557afda2a39cbb9b28))
+
 ## [1.0.14](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.13...v1.0.14) (2025-12-09)
 
 
