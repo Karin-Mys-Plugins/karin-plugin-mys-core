@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.16](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.15...v1.0.16) (2025-12-10)
+
+
+### Bug Fixes
+
+* web配置 ([0f0f9ad](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/0f0f9ad68529b67bcacfb6d98781adb6a02f14fe))
+
 ## [1.0.15](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.14...v1.0.15) (2025-12-10)
 
 
