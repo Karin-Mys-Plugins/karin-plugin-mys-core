@@ -11,14 +11,14 @@ export const BindMysDevice = karin.command(
 
     if (cnLtuidInfoList.length === 0) {
       if (ltuidInfoList.length === 0) {
-        e.reply('暂未绑定国服米游社账号，请先“#米游社绑定”进行绑定！', { at: true })
+        e.reply('暂未绑定国服米游社账号，请先使用 “#米游社登录” 进行绑定！', { at: true })
       } else {
         e.reply('国际服暂不需要绑定设备。', { at: true })
       }
       return true
     }
 
-    e.reply('请发送设备信息(建议私聊发送)，或者发送“取消”取消绑定', { at: true })
+    e.reply('请发送设备信息(建议私聊发送)，或者发送 “取消” 取消绑定', { at: true })
 
     const ctx = await karin.ctx(e)
     if (/^#?取消(绑定)?/.test(ctx.msg)) {
