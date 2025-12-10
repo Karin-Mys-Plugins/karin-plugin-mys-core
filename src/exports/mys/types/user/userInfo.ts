@@ -43,5 +43,10 @@ export interface RefreshUidResultType {
     columnKey: `${string}-uids`
     data: BaseGameUIDInfoTableType<string>[`${string}-uids`]
   }[]
+  mains: {
+    name: string
+    columnKey: `${string}-main`
+    data: string
+  }[]
   message: string
 }

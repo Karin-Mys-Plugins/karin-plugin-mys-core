@@ -98,6 +98,7 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
     let message = ''
 
     const uids: RefreshUidResultType['uids'] = []
+    const mains: RefreshUidResultType['mains'] = []
 
     if (MysGame.num > 0) {
       const res = (await (await getUserGameRolesByCookie.initDevice(options)).request(null)).data
@@ -127,9 +128,17 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
 
           uids.push({
             name: Game.name,
-            columnKey: Game.columnKey,
+            columnKey: Game.columnKey.uids,
             data: bindUids
           })
+
+          if (!userInfo.main_uid || !bindUids[userInfo.main_uid]) {
+            mains.push({
+              name: Game.name,
+              columnKey: Game.columnKey.main,
+              data: Array.from(uidList)[0] || ''
+            })
+          }
         })
       } else if (res?.retcode === -100) {
         message = 'Cookie已失效，请重新#扫码登录或#刷新Cookie！'
@@ -139,7 +148,7 @@ export class UserInfo extends BaseUserInfo<BaseUserInfoTableType> {
     }
 
     return {
-      Serv: options.type, uids, message
+      Serv: options.type, uids, mains, message
     }
   }
 

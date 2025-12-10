@@ -26,7 +26,7 @@ export const BindUID = karin.command(
     }
 
     await userInfo.saveUserInfo({
-      [Game.game + '-main']: uid, [Game.game + '-uids']: bindUids
+      [Game.columnKey.main]: uid, [Game.columnKey.uids]: bindUids
     })
 
     await handler.call(`MYS.${Game.game}.ShowUID`, { e })
@@ -34,15 +34,6 @@ export const BindUID = karin.command(
     return true
   }
 )
-
-const getMainUid = (uid: string, mainUid: string, bindUids: GameUserInfoBase<any>['bind_uids']) => {
-  if (mainUid !== uid) return mainUid
-
-  const filterUids = Object.entries(bindUids).filter(value => value[1]!.perm !== UidPermission.DEL)
-  if (filterUids.length > 0) return filterUids[0][0]
-
-  return ''
-}
 
 export const UnbindUID = karin.command(
   /^#?(.*?)(删除|解绑)uid(?:\s*(.+))?$/i,
@@ -87,10 +78,59 @@ export const UnbindUID = karin.command(
       return 'break'
     }
 
+    const getMainUid = (uid: string, mainUid: string, bindUids: GameUserInfoBase<any>['bind_uids']) => {
+      if (mainUid !== uid) return mainUid
+
+      const filterUids = Object.entries(bindUids).filter(value => value[1]!.perm !== UidPermission.DEL)
+      if (filterUids.length > 0) return filterUids[0][0]
+
+      return ''
+    }
+
     const mainUid = getMainUid(delUid, userInfo.main_uid, bindUids)
 
     await userInfo.saveUserInfo({
-      [Game.game + '-main']: mainUid, [Game.game + '-uids']: bindUids
+      [Game.columnKey.main]: mainUid, [Game.columnKey.uids]: bindUids
+    })
+
+    await handler.call(`MYS.${Game.game}.ShowUID`, { e })
+
+    return true
+  }
+)
+
+export const ChangeMainUID = karin.command(
+  /^#?(.*?)(切换|更改)uid(?:\s*(.+))?$/i,
+  async (e, next) => {
+    const msgMatch = e.msg.match(/^#?(?<prefix>.*?)(切换|更改)uid(?:\s*(?<idx>.+))?$/i)?.groups!
+
+    const Game = MysGame.match(msgMatch.prefix?.trim() || '')
+    if (!Game) return next()
+
+    const uid = msgMatch.idx?.trim()
+    const idx = +uid.split('.')[0]
+    if (isNaN(idx)) {
+      e.reply('请正确提供要切换的游戏UID或序号！', { at: true })
+      return true
+    }
+    const userInfo = await Game.UserInfo.create(e.userId)
+
+    let mainUid = uid
+    const bindUids = userInfo.bind_uids
+    if (idx <= 10000) {
+      const filterUids = Object.entries(bindUids).filter(value => value[1]!.perm !== UidPermission.DEL)
+      if (idx > filterUids.length || idx <= 0) {
+        e.reply('UID序号不存在，请检查后重新输入！', { at: true })
+        return true
+      }
+      mainUid = filterUids[idx - 1][0]
+    } else if (!bindUids[mainUid] || bindUids[mainUid]!.perm === UidPermission.DEL) {
+      e.reply('UID未绑定，请检查后重新输入！', { at: true })
+      return true
+    }
+
+    await userInfo.saveUserInfo({
+      [Game.columnKey.main]: mainUid
     })
 
     await handler.call(`MYS.${Game.game}.ShowUID`, { e })
@@ -135,9 +175,9 @@ export const ShowBindAccountCmdFunc = async (e: Message) => {
 
         data.bindUids.push({
           gameName: Game.name,
-          uids: Object.entries(gameUserInfo.bind_uids).filter(([, info]) => info!.ltuid === ltuidInfo.ltuid).map(([uid, info]) => ({
-            uid, perm: info!.perm
-          }))
+          uids: Object.entries(gameUserInfo.bind_uids)
+            .filter(([, info]) => info!.ltuid === ltuidInfo.ltuid)
+            .map(([uid, info]) => ({ uid, perm: info!.perm }))
         })
       })
 

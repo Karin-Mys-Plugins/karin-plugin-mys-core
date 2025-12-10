@@ -259,7 +259,7 @@ const BindCookie = async (userId: string, cookieObj: CookieParamsType, perm: Uid
     }
 
     return {
-      Serv: Serv || MysAccountType.cn, uids: [], message: errMsg.pop() || ''
+      Serv: Serv || MysAccountType.cn, uids: [], mains: [], message: errMsg.pop() || ''
     }
   })()
 
@@ -282,9 +282,12 @@ const BindCookie = async (userId: string, cookieObj: CookieParamsType, perm: Uid
   await userInfo.saveUserInfo({
     ...uidList.uids.reduce((acc, cur) => {
       acc[cur.columnKey] = cur.data
-
       return acc
     }, {} as Record<`${string}-uids`, BaseGameUIDInfoTableType<string>[`${string}-uids`]>),
+    ...uidList.mains.reduce((acc, cur) => {
+      acc[cur.columnKey] = cur.data
+      return acc
+    }, {} as Record<`${string}-main`, string>),
     ltuids: userInfo.ltuids.add(cookieParams.ltuid!, true),
   })
 

@@ -19,7 +19,7 @@ export const MysGame = new class MysGame {
   }
 
   RegisterGame<GameUserInfoTableType extends BaseUserInfoTableType> (Game: RegisterGameBase<GameUserInfoTableType>) {
-    this.#games.set(Game.columnKey, Game)
+    this.#games.set(Game.game, Game)
   }
 
   async forEachGame<GameUserInfoTableType extends BaseUserInfoTableType> (
@@ -35,7 +35,6 @@ export const MysGame = new class MysGame {
 
 export class RegisterGameBase<GameUserInfoTableType extends BaseUserInfoTableType> {
   game: string
-  columnKey: `${string}-uids`
   /** @description 游戏名称 */
   name: gameName
 
@@ -51,14 +50,19 @@ export class RegisterGameBase<GameUserInfoTableType extends BaseUserInfoTableTyp
     refreshFuc: (info: UserGameRoleItemType[], options: { userId: string, cookie: string } & BaseltuidInfoType) => Promise<string[]>
   ) {
     this.game = game
-    this.columnKey = `${game}-uids`
-
     this.name = name
     this.prefixs = prefixs
 
     this.UserInfo = userInfo
 
     this.refresh = refreshFuc
+  }
+
+  get columnKey () {
+    return {
+      uids: `${this.game}-uids` as const,
+      main: `${this.game}-main` as const
+    }
   }
 
   get prefix () {
