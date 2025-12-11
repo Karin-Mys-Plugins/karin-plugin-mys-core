@@ -1,5 +1,10 @@
+import { MysAccountType } from '@/exports/database'
+
 export interface DefaultCoreConfigType {
-  githubProxyUrl: string
+  proxy: {
+    github: string
+    [MysAccountType.os]: string
+  }
 }
 
 export interface DefaultCoreConfigDefineType {

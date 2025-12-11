@@ -2,11 +2,11 @@ import { logger } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import { Config } from './config'
 
-export class EnhancedArray<T> extends Array<T> {
+export class EnhancedArray<T, C extends { [key: string]: any }> extends Array<T> {
   #keyPath: string
-  #cfg: Config<any>
+  #cfg: Config<C>
 
-  constructor (cfg: Config<any>, items: T[], path: string) {
+  constructor (cfg: Config<C>, items: T[], path: string) {
     super()
 
     Object.setPrototypeOf(this, EnhancedArray.prototype)
@@ -38,7 +38,7 @@ export class EnhancedArray<T> extends Array<T> {
     }
 
     this.push(element)
-    this.#cfg.set<T[]>(this.#keyPath, this.slice(), save)
+    this.#cfg.set(this.#keyPath, this.slice() as any, save)
 
     return this
   }
@@ -57,7 +57,7 @@ export class EnhancedArray<T> extends Array<T> {
     }
 
     this.push(...elements)
-    this.#cfg.set<T[]>(this.#keyPath, this.slice(), save)
+    this.#cfg.set(this.#keyPath, this.slice() as any, save)
 
     return this
   }
@@ -70,7 +70,7 @@ export class EnhancedArray<T> extends Array<T> {
     }
     lodash.pullAt(this, idx)
 
-    this.#cfg.set<T[]>(this.#keyPath, this.slice(), save)
+    this.#cfg.set(this.#keyPath, this.slice() as any, save)
 
     return this
   }
@@ -79,7 +79,7 @@ export class EnhancedArray<T> extends Array<T> {
   pullAll (elements: T[], save: boolean): this {
     lodash.pullAll(this, elements)
 
-    this.#cfg.set<T[]>(this.#keyPath, this.slice(), save)
+    this.#cfg.set(this.#keyPath, this.slice() as any, save)
 
     return this
   }
@@ -88,7 +88,7 @@ export class EnhancedArray<T> extends Array<T> {
   remove (predicate: (item: T) => boolean, save: boolean): this {
     lodash.remove(this as T[], predicate)
 
-    this.#cfg.set<T[]>(this.#keyPath, this.slice(), save)
+    this.#cfg.set(this.#keyPath, this.slice() as any, save)
 
     return this
   }

@@ -1,9 +1,13 @@
 import { dir } from '@/dir'
 import { Config } from '@/exports/config'
+import { MysAccountType } from '@/exports/database'
 import { DefaultCoreConfigDefineType, DefaultCoreConfigType } from '../types'
 
 const defaultConfig: DefaultCoreConfigType = {
-  githubProxyUrl: 'https://gh-proxy.org'
+  proxy: {
+    github: 'https://gh-proxy.org',
+    [MysAccountType.os]: ''
+  }
 }
 
 const defaultConfigDefine: DefaultCoreConfigDefineType = {

@@ -1,4 +1,4 @@
-import { DeviceCfg, DeviceConfigType } from '@/core'
+import { DeviceCfg } from '@/core'
 import { dir } from '@/dir'
 import { MysAccountType, MysDeviceInfoDatabaseBaseType, MysDeviceInfoDatabaseIdFpType } from '@/exports/database'
 import { common } from '@/exports/utils'
@@ -86,7 +86,7 @@ export class DefineApi<
 
   /** @description 使用CookieHeaders等需要device进行请求时使用 */
   async initDevice (userInfo: U, deviceFp: boolean = false) {
-    const defaultDeviceInfo = DeviceCfg.get<DeviceConfigType>('')
+    const defaultDeviceInfo = DeviceCfg.get('')
     if (userInfo?.deviceMd5) {
       const deviceData = await DeviceInfo.get(userInfo.deviceMd5)
 

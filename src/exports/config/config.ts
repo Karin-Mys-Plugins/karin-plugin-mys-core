@@ -4,7 +4,19 @@ import lodash from 'node-karin/lodash'
 import path from 'node:path'
 import { EnhancedArray } from './array'
 
-export class Config<C extends Record<string, any>> {
+// 递归生成嵌套键路径类型
+type PathImpl<T, Key extends keyof T> = Key extends string
+  ? T[Key] extends Record<string, any> ? T[Key] extends ArrayLike<any> ? Key | `${Key}.${PathImpl<T[Key], Exclude<keyof T[Key], keyof any[]>>}` : Key | `${Key}.${PathImpl<T[Key], keyof T[Key]>}` : Key
+  : never
+
+type Path<T> = PathImpl<T, keyof T> | keyof T
+
+// 根据路径推断值类型
+type PathValue<T, P extends Path<T>> = P extends `${infer Key}.${infer Rest}`
+  ? Key extends keyof T ? Rest extends Path<T[Key]> ? PathValue<T[Key], Rest> : never : never
+  : P extends keyof T ? T[P] : never
+
+export class Config<C extends { [key: string]: any }> {
   #cfgName: `${string}:${string}`
   /**
    * @description 配置缓存
@@ -14,7 +26,7 @@ export class Config<C extends Record<string, any>> {
    * @description 默认配置
    */
   #DefaultConfig: C
-  #DefineConfig: Record<string, any>
+  #DefineConfig: { [key: string]: any }
   /**
    * @description 配置保存路径
    */
@@ -23,7 +35,7 @@ export class Config<C extends Record<string, any>> {
   /**
    * @param name 插件名称:配置名称
    */
-  constructor (name: `${string}:${string}`, ConfigDir: string, DefaultConfig: C, DefineConfig: Record<string, any>) {
+  constructor (name: `${string}:${string}`, ConfigDir: string, DefaultConfig: C, DefineConfig: { [key: string]: any }) {
     this.#cfgName = name
 
     const splitName = name.split(':')
@@ -76,39 +88,50 @@ export class Config<C extends Record<string, any>> {
   /**
    * @description 获取配置路径对应的默认配置
    */
-  getDef<T> (path: string) {
+  getDef (path: ''): C
+  getDef<P extends Path<C> | ''> (path: P): C | PathValue<C, P> {
     const defConfig = JSON.parse(JSON.stringify(this.#DefaultConfig))
 
-    return lodash.get(defConfig, path) as T
+    return lodash.get(defConfig, path)
   }
 
   /**
    * @description 获取配置路径对应的配置
+   * @param path 配置路径,支持任意深度的嵌套路径,返回值类型会根据路径自动推断
+   * @param isArray 是否返回 EnhancedArray 类型
+   * @param def 默认值
    */
-  get<T> (path: string, isArray?: false, def?: T): T
-  get<T> (path: string, isArray: true, def?: T[]): EnhancedArray<T>
-  get<T> (path: string, isArray: boolean = false, def?: T): T | EnhancedArray<T> {
+  get (path: '', isArray?: false, def?: C): C
+  get<P extends Path<C>> (path: P, isArray?: false, def?: PathValue<C, P>): PathValue<C, P>
+  get<P extends Path<C>, T = PathValue<C, P>> (path: P, isArray: true, def?: T[]): EnhancedArray<T extends any[] ? T[number] : T, C>
+  get<P extends Path<C> | ''> (path: P, isArray: boolean = false, def?: PathValue<C, P>): C | PathValue<C, P> | EnhancedArray<any, C> {
     const conf = JSON.parse(JSON.stringify(this.#ConfigCache))
+    const pathStr = String(path)
 
-    const result = path ? lodash.get(conf, path, def) : conf
+    const result = pathStr ? lodash.get(conf, pathStr, def) : conf
 
     if (isArray) {
       if (!Array.isArray(result)) {
-        logger.error(`配置路径 ${path} 不是数组类型`)
-        return new EnhancedArray<T>(this, [], path)
+        logger.error(`配置路径 ${pathStr} 不是数组类型`)
+        return new EnhancedArray<any, C>(this, [], pathStr)
       }
 
-      return new EnhancedArray<T>(this, result, path)
+      return new EnhancedArray<any, C>(this, result, pathStr)
     }
 
     return result
   }
 
   /**
+   * @description 设置配置项的值
+   * @param path 配置路径,支持任意深度的嵌套路径
+   * @param value 要设置的值,类型会根据路径自动推断
    * @param save 是否立即保存
    */
-  set<T> (path: string, value: T, save: boolean): void {
-    lodash.set(this.#ConfigCache!, path, value)
+  set (path: '', value: C, save: boolean): void
+  set<P extends Path<C>> (path: P, value: PathValue<C, P>, save: boolean): void
+  set<P extends Path<C> | ''> (path: P, value: C | PathValue<C, P>, save: boolean): void {
+    lodash.set(this.#ConfigCache!, String(path), value)
 
     save && this.save()
   }

@@ -2,6 +2,7 @@ import { CoreCfg, DeviceCfg } from '@/core/config'
 import { dir } from '@/dir'
 import { components, defineConfig, logger } from 'node-karin'
 import lodash from 'node-karin/lodash'
+import { MysAccountType } from './exports/database'
 
 const enum AccordionEnum {
   Config = 'accordion-config-key',
@@ -42,13 +43,17 @@ export default defineConfig({
     components.accordion.create(AccordionEnum.Config, {
       label: '基础设置',
       children: [
-        components.accordion.createItem('accordion-githubProxy-item-key', {
-          title: 'GitHub 代理设置',
-          subtitle: '用于下载插件资源',
+        components.accordion.createItem('accordion-proxy-item-key', {
+          title: '代理设置',
+          subtitle: '用于下载插件资源或api请求',
           children: [
-            components.input.url('githubProxyUrl', {
+            components.input.url('proxy-github', {
               label: 'GitHub 代理地址',
-              defaultValue: CoreCfg.get<string>('githubProxyUrl'),
+              defaultValue: CoreCfg.get('proxy.github'),
+            }),
+            components.input.url(`proxy-${MysAccountType.os}`, {
+              label: 'Hoyolab 米游社 API 代理',
+              defaultValue: CoreCfg.get(`proxy.${MysAccountType.os}`),
             })
           ]
         })
@@ -65,7 +70,7 @@ export default defineConfig({
           className: 'ml-4 mr-4',
           children: [
             components.input.number('version=int', {
-              defaultValue: DeviceCfg.get<number>('version') + '',
+              defaultValue: DeviceCfg.get('version') + '',
               label: 'androidVersion',
               rules: [
                 { max: 15, min: 10 }
@@ -73,27 +78,27 @@ export default defineConfig({
               isRequired: true,
             }),
             components.input.string('name', {
-              defaultValue: DeviceCfg.get<string>('name'),
+              defaultValue: DeviceCfg.get('name'),
               label: 'deviceName',
               isRequired: true,
             }),
             components.input.string('board', {
-              defaultValue: DeviceCfg.get<string>('board'),
+              defaultValue: DeviceCfg.get('board'),
               label: 'deviceBoard',
               isRequired: true,
             }),
             components.input.string('model', {
-              defaultValue: DeviceCfg.get<string>('model'),
+              defaultValue: DeviceCfg.get('model'),
               label: 'deviceModel',
               isRequired: true,
             }),
             components.input.string('product', {
-              defaultValue: DeviceCfg.get<string>('product'),
+              defaultValue: DeviceCfg.get('product'),
               label: 'deviceProduct',
               isRequired: true,
             }),
             components.input.string('fingerprint', {
-              defaultValue: DeviceCfg.get<string>('fingerprint'),
+              defaultValue: DeviceCfg.get('fingerprint'),
               label: 'deviceFingerprint',
               className: 'w-full',
               isRequired: true,
@@ -115,12 +120,20 @@ export default defineConfig({
     try {
       lodash.forEach(changeConfig, (childrenValue, accordionKey) => {
         switch (accordionKey) {
-          case AccordionEnum.Config:
+          case AccordionEnum.Config: {
+            childrenValue.forEach(children => {
+              lodash.forEach(children, (value, childrenKey) => {
+                const { key, value: formatValue } = FormatValue(childrenKey, value)
+                CfgMap[accordionKey].set(key as any, formatValue, false)
+              })
+            })
+            break
+          }
           case AccordionEnum.Device: {
             childrenValue.forEach(children => {
               lodash.forEach(children, (value, childrenKey) => {
                 const { key, value: formatValue } = FormatValue(childrenKey, value)
-                CfgMap[accordionKey].set(key, formatValue, false)
+                CfgMap[accordionKey].set(key as any, formatValue, false)
               })
             })
             break
