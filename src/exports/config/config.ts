@@ -8,14 +8,14 @@ import { EnhancedArray } from './array'
 type ToString<T> = T extends string | number ? `${T}` : never
 
 // 递归生成嵌套键路径类型
-export type PathImpl<T, Key extends keyof T> = Key extends string | number
+type PathImpl<T, Key extends keyof T> = Key extends string | number
   ? T[Key] extends Record<string, any> ? T[Key] extends ArrayLike<any> ? ToString<Key> | `${ToString<Key>}.${PathImpl<T[Key], Exclude<keyof T[Key], keyof any[]>>}` : ToString<Key> | `${ToString<Key>}.${PathImpl<T[Key], keyof T[Key]>}` : ToString<Key>
   : never
 
-export type Path<T> = PathImpl<T, keyof T> | keyof T
+type Path<T> = PathImpl<T, keyof T> | keyof T
 
 // 根据路径推断值类型
-export type PathValue<T, P> = P extends keyof T
+type PathValue<T, P> = P extends keyof T
   ? T[P]
   : P extends `${infer K}.${infer Rest}` ? K extends keyof T ? PathValue<T[K], Rest> : {
     [Key in keyof T]: ToString<Key> extends K ? PathValue<T[Key], Rest> : never
