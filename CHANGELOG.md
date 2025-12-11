@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.19](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.18...v1.0.19) (2025-12-11)
+
+
+### Bug Fixes
+
+* OIDC ([ec4b4af](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/ec4b4af76769dcd3131645afaf6be22857335ef8))
+
 ## [1.0.18](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.17...v1.0.18) (2025-12-11)
 
 
