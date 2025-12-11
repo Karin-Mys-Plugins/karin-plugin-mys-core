@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.17](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.16...v1.0.17) (2025-12-11)
+
+
+### Bug Fixes
+
+* config提供更完整的类型支持 ([58e1d71](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/58e1d712701ca509103bab9dc83193eef97b7520))
+
 ## [1.0.16](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.15...v1.0.16) (2025-12-10)
 
 
