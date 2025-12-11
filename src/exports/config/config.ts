@@ -4,17 +4,22 @@ import lodash from 'node-karin/lodash'
 import path from 'node:path'
 import { EnhancedArray } from './array'
 
+// 将键转换为字符串类型
+type ToString<T> = T extends string | number ? `${T}` : never
+
 // 递归生成嵌套键路径类型
-type PathImpl<T, Key extends keyof T> = Key extends string
-  ? T[Key] extends Record<string, any> ? T[Key] extends ArrayLike<any> ? Key | `${Key}.${PathImpl<T[Key], Exclude<keyof T[Key], keyof any[]>>}` : Key | `${Key}.${PathImpl<T[Key], keyof T[Key]>}` : Key
+export type PathImpl<T, Key extends keyof T> = Key extends string | number
+  ? T[Key] extends Record<string, any> ? T[Key] extends ArrayLike<any> ? ToString<Key> | `${ToString<Key>}.${PathImpl<T[Key], Exclude<keyof T[Key], keyof any[]>>}` : ToString<Key> | `${ToString<Key>}.${PathImpl<T[Key], keyof T[Key]>}` : ToString<Key>
   : never
 
-type Path<T> = PathImpl<T, keyof T> | keyof T
+export type Path<T> = PathImpl<T, keyof T> | keyof T
 
 // 根据路径推断值类型
-type PathValue<T, P extends Path<T>> = P extends `${infer Key}.${infer Rest}`
-  ? Key extends keyof T ? Rest extends Path<T[Key]> ? PathValue<T[Key], Rest> : never : never
-  : P extends keyof T ? T[P] : never
+export type PathValue<T, P> = P extends keyof T
+  ? T[P]
+  : P extends `${infer K}.${infer Rest}` ? K extends keyof T ? PathValue<T[K], Rest> : {
+    [Key in keyof T]: ToString<Key> extends K ? PathValue<T[Key], Rest> : never
+  }[keyof T] : never
 
 export class Config<C extends { [key: string]: any }> {
   #cfgName: `${string}:${string}`
@@ -87,24 +92,26 @@ export class Config<C extends { [key: string]: any }> {
 
   /**
    * @description 获取配置路径对应的默认配置
+   * @param path 配置路径,支持任意深度的嵌套路径,传入空字符串''可获取整个配置对象
    */
   getDef (path: ''): C
+  getDef<P extends Path<C>> (path: P): PathValue<C, P>
   getDef<P extends Path<C> | ''> (path: P): C | PathValue<C, P> {
     const defConfig = JSON.parse(JSON.stringify(this.#DefaultConfig))
 
-    return lodash.get(defConfig, path)
+    return path ? lodash.get(defConfig, path) : defConfig
   }
 
   /**
    * @description 获取配置路径对应的配置
-   * @param path 配置路径,支持任意深度的嵌套路径,返回值类型会根据路径自动推断
+   * @param path 配置路径,支持任意深度的嵌套路径,传入空字符串''可获取整个配置对象
    * @param isArray 是否返回 EnhancedArray 类型
    * @param def 默认值
    */
   get (path: '', isArray?: false, def?: C): C
   get<P extends Path<C>> (path: P, isArray?: false, def?: PathValue<C, P>): PathValue<C, P>
   get<P extends Path<C>, T = PathValue<C, P>> (path: P, isArray: true, def?: T[]): EnhancedArray<T extends any[] ? T[number] : T, C>
-  get<P extends Path<C> | ''> (path: P, isArray: boolean = false, def?: PathValue<C, P>): C | PathValue<C, P> | EnhancedArray<any, C> {
+  get<P extends Path<C> | ''> (path: P, isArray: boolean = false, def?: any): C | PathValue<C, P> | EnhancedArray<any, C> {
     const conf = JSON.parse(JSON.stringify(this.#ConfigCache))
     const pathStr = String(path)
 
