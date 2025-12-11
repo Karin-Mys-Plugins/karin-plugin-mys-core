@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.20](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.19...v1.0.20) (2025-12-11)
+
+
+### Bug Fixes
+
+* Config使用enum作为键时类型错误 ([67ec31f](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/67ec31f9dfc40bdb74076806e121e57b9cf3e844))
+* 删除不必要的export ([e3bc8ab](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/e3bc8ab3cd3a0c461eecddc6844b0556e1515ed5))
+
 ## [1.0.19](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.18...v1.0.19) (2025-12-11)
 
 
