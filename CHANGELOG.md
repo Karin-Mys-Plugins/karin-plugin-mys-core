@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.18](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.17...v1.0.18) (2025-12-11)
+
+
+### Bug Fixes
+
+* 更新工作流 ([fa80e6e](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/fa80e6eb70d132e2718d32a2f94def958e0e20a3))
+
 ## [1.0.17](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.16...v1.0.17) (2025-12-11)
 
 
