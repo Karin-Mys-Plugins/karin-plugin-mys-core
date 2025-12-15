@@ -4,8 +4,10 @@ import React from 'react'
 
 export interface DefaultLayoutProps {
   children: React.ReactNode
-  bg: string
-  width: string
+  bgStyle: React.CSSProperties & {
+    backgroundColor: React.CSSProperties['backgroundColor']
+    width: React.CSSProperties['width']
+  }
   mysPlugin?:{
     name: string
     version: string
@@ -14,13 +16,14 @@ export interface DefaultLayoutProps {
 }
 
 export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
-  children, bg, width, mysPlugin
+  children, bgStyle, mysPlugin
 }) => {
   const karinVersion = config.pkg().version
 
   return (
     <div
-      className={`relative flex ${width} flex-col pb-10 font-hywh text-black ${bg}`}
+      className='relative flex flex-col pb-10 font-hywh text-black'
+      style={bgStyle}
       id='container'
     >
       {children}
@@ -31,7 +34,6 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
             <div className='flex items-center gap-2'>
               <img
                 src={`${mysPlugin.logoPath}`}
-                alt='Mys Plugin Logo'
                 className='h-6 w-6 rounde'
               />
               <div className='flex flex-col'>
@@ -50,7 +52,6 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
         <div className='flex items-center gap-2'>
           <img
             src={`${dir.pluginDir}/resources/image/mys-core-logo.webp`}
-            alt='MysCore Logo'
             className='h-6 w-6 rounded-sm'
           />
           <div className='flex flex-col'>
@@ -67,7 +68,6 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
         <div className='flex items-center gap-2'>
           <img
             src={`${dir.pluginDir}/resources/image/frame-logo.webp`}
-            alt='Karin Logo'
             className='h-6 w-6 rounded-sm'
           />
           <div className='flex flex-col'>

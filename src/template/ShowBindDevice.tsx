@@ -9,7 +9,7 @@ export interface ShowBindDeviceProps {
  */
 export const ShowBindDeviceComponent: React.FC<ShowBindDeviceProps> = () => {
   return (
-    <DefaultLayoutComponent bg='bg-[#f6f0e6]' width='w-[600px]'>
+    <DefaultLayoutComponent bgStyle={{ backgroundColor: '#f6f0e6', width: 600 }}>
       <div className='w-full px-[18px] pb-9 pt-5'>
         <div className='rounded-lg bg-white p-4 text-center text-[#6b6b6b]'>
           {/* 设备信息将在此处显示 */}

@@ -1,0 +1,38 @@
+name: Publish Preview Package
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - dev # 可以根据需要调整分支
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      # 检出代码
+      - uses: actions/checkout@v4
+
+      # 设置 Node.js 环境
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          # 设置 npm 注册表 URL
+          registry-url: https://registry.npmjs.org
+
+      # 安装依赖
+      - name: Install dependencies
+        run: npm install
+
+      # 构建项目
+      - name: Build
+        run: npm run build
+
+      # 发布到 pkg.pr.new
+      - name: Publish to pkg.pr.new
+        run: pnpx pkg-pr-new publish

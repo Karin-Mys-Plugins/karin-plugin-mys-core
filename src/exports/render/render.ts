@@ -1,5 +1,5 @@
 import { dir } from '@/dir'
-import karin, { absPath, config, existToMkdirSync, karinPathBase, Options } from 'node-karin'
+import karin, { absPath, existToMkdirSync, karinPathBase, Options } from 'node-karin'
 import fs from 'node:fs'
 import path from 'node:path'
 import React from 'react'
@@ -46,12 +46,6 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
         default: absPath(path.join(this.#renderCfg.pluginDir, 'resources')),
         download: absPath(this.#renderCfg.ResourcesDir),
       },
-    }
-  }
-
-  get karin () {
-    return {
-      version: config.pkg().version
     }
   }
 

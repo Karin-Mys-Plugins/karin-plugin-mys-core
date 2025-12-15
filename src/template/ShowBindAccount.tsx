@@ -37,7 +37,7 @@ export const ShowBindAccountComponent: React.FC<ShowBindAccountProps> = ({
   const plugin = Render.plugin
 
   return (
-    <DefaultLayoutComponent bg='bg-[#f6f0e6]' width='w-[600px]'>
+    <DefaultLayoutComponent bgStyle={{ backgroundColor: '#f6f0e6', width: 600 }}>
       <div className='w-full px-[18px] pb-9 pt-5'>
         {/* 右上角装饰 logo */}
         <div
