@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches:
-      - dev # 可以根据需要调整分支
+      - main # 可以根据需要调整分支
 
 permissions:
   pull-requests: write

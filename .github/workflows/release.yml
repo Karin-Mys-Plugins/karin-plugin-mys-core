@@ -3,9 +3,6 @@ on:
   push:
     branches:
       - main # 仅当推送到 main 分支时触发
-  pull_request:
-    branches:
-      - main # 当有 PR 指向 main 分支时也触发
 
 permissions:
   id-token: write
@@ -26,11 +23,8 @@ jobs:
         with:
           # 设置发布类型为 Node.js
           release-type: node
-          # 使用 PAT 来触发其他工作流 (需要在仓库设置中添加 PAT_TOKEN secret)
-          token: ${{ secrets.PAT_TOKEN || github.token }}
       # 检出代码
       - uses: actions/checkout@v4
-        if: ${{ steps.release.outputs.release_created }}
       # 设置 Node.js 环境
       - uses: actions/setup-node@v4
         with:
@@ -38,19 +32,19 @@ jobs:
           node-version: 20
           # 设置 npm 注册表 URL
           registry-url: https://registry.npmjs.org
-        if: ${{ steps.release.outputs.release_created }}
       # 安装依赖
       - run: npm install
-        if: ${{ steps.release.outputs.release_created }}
       # 升级npm版本
       - run: npm install -g npm@latest
         if: ${{ steps.release.outputs.release_created }}
       # 编译
       - run: npm run build
-        if: ${{ steps.release.outputs.release_created }}
       # 删除开发依赖
       - run: npm pkg delete devDependencies
-        if: ${{ steps.release.outputs.release_created }}
+      # 发布到预览（仅在非 release 创建时）
+      - name: Publish to pkg.pr.new
+        run: pnpx pkg-pr-new publish
+        if: ${{ !steps.release.outputs.release_created }}
       # 发布npm
       - run: npm run pub
         if: ${{ steps.release.outputs.release_created }}
@@ -58,20 +52,3 @@ jobs:
       - name: Sync to npmmirror.com
         run: npm install cnpm -g && cnpm sync --no-progress && echo "Sync completed"
         if: ${{ steps.release.outputs.release_created }}
-
-  # 为 release-please PR 发布预览版本
-  preview-release-pr:
-    runs-on: ubuntu-latest
-    # 仅在 PR 事件时运行
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install dependencies
-        run: npm install
-      - name: Build
-        run: npm run build
-      - name: Publish to pkg.pr.new
-        run: npx pkg-pr-new publish
