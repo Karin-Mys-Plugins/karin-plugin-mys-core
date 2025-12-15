@@ -26,6 +26,8 @@ jobs:
         with:
           # 设置发布类型为 Node.js
           release-type: node
+          # 使用 PAT 来触发其他工作流 (需要在仓库设置中添加 PAT_TOKEN secret)
+          token: ${{ secrets.PAT_TOKEN || github.token }}
       # 检出代码
       - uses: actions/checkout@v4
         if: ${{ steps.release.outputs.release_created }}
