@@ -23,7 +23,6 @@ jobs:
           release-type: node
       # 检出代码
       - uses: actions/checkout@v4
-        if: ${{ steps.release.outputs.release_created }}
       # 设置 Node.js 环境
       - uses: actions/setup-node@v4
         with:
@@ -31,19 +30,19 @@ jobs:
           node-version: 20
           # 设置 npm 注册表 URL
           registry-url: https://registry.npmjs.org
-        if: ${{ steps.release.outputs.release_created }}
       # 安装依赖
       - run: npm install
-        if: ${{ steps.release.outputs.release_created }}
       # 升级npm版本
       - run: npm install -g npm@latest
         if: ${{ steps.release.outputs.release_created }}
       # 编译
       - run: npm run build
-        if: ${{ steps.release.outputs.release_created }}
       # 删除开发依赖
       - run: npm pkg delete devDependencies
-        if: ${{ steps.release.outputs.release_created }}
+      # 发布到预览
+      - name: Publish to pkg.pr.new
+        run: npx pkg-pr-new publish
+        if: ${{ !steps.release.outputs.release_created }}
       # 发布npm
       - run: npm run pub
         if: ${{ steps.release.outputs.release_created }}
