@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches:
-      - main # 可以根据需要调整分支
+      - main
 
 permissions:
   pull-requests: write
@@ -35,4 +35,4 @@ jobs:
 
       # 发布到 pkg.pr.new
       - name: Publish to pkg.pr.new
-        run: pnpx pkg-pr-new publish
+        run: npx pkg-pr-new publish
