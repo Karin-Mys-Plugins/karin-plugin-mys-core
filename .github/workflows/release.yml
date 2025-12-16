@@ -4,6 +4,7 @@ on:
     branches:
       - main # 仅当推送到 main 分支时触发
   pull_request: # 添加 PR 触发器
+    types: [opened, synchronize, reopened] # PR 打开、更新、重新打开时触发
     branches:
       - main
 
@@ -35,7 +36,7 @@ jobs:
           node-version: 20
           # 设置 npm 注册表 URL
           registry-url: https://registry.npmjs.org
-          if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.release_created }}
       # 安装依赖
       - run: npm install
         if: ${{ steps.release.outputs.release_created }}
