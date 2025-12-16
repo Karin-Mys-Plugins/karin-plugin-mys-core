@@ -6,6 +6,11 @@ on:
       - opened
       - synchronize
       - reopened
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
   push:
     branches-ignore:
       - main # 除了 main 分支外的其他分支推送时触发

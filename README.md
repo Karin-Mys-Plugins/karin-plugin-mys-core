@@ -19,6 +19,45 @@
 
 - 本插件已加入插件商店，可在插件商店中一键下载安装。
 
+```bash
+# 或使用 npm 安装
+npm add karin-plugin-mys-core -w
+```
+
+---
+
+## 快速开始
+
+```typescript
+import { Config } from 'karin-plugin-mys-core/config'
+import { Database, DatabaseType } from 'karin-plugin-mys-core/database'
+import { ReactRender, React } from 'karin-plugin-mys-core/render'
+
+// 1. 配置管理
+const config = new Config('my-plugin:config', './config', {
+  enable: true,
+  users: []
+}, {})
+
+// 2. 数据库操作
+const db = Database.get()
+await db.init('./data', 'users', [
+  Database.PkColumn('userId', 'STRING'),
+  Database.Column('nickname', 'STRING', '')
+], {}, DatabaseType.Db)
+
+// 3. 渲染组件
+const render = new ReactRender({
+  name: 'my-plugin',
+  version: '1.0.0',
+  pluginDir: __dirname,
+  ResourcesDir: path.join(__dirname, '../resources')
+})
+
+const Card = ({ text }) => <div className="card">{text}</div>
+const image = await render.template('card', Card, { text: 'Hello' })
+```
+
 ---
 
 ## 游戏模块
@@ -45,28 +84,48 @@ import { Config } from 'karin-plugin-mys-core/config'
 
 用于管理 JSON 配置文件，支持自动补全、类型安全和实时监听。
 
+**特性**
+
+- ✅ 自动补全缺失的配置项
+- ✅ 自动过滤未定义的配置项
+- ✅ 支持深层嵌套路径访问
+- ✅ 文件变更自动监听
+- ✅ 类型安全的 TypeScript 支持
+
 **构造函数**
 
 ```typescript
 const config = new Config<ConfigType>(
-  'plugin-name:config-name',  // 配置名称
-  '/path/to/config.json',      // 配置文件路径
-  defaultConfig,               // 默认配置对象
-  defineConfig                 // 配置定义对象
+  'plugin-name:config-name',  // 配置名称（格式：插件名:配置名）
+  '/path/to/config',          // 配置文件目录
+  defaultConfig,              // 默认配置对象
+  defineConfig                // 配置定义对象（用于嵌套对象的结构定义）
 )
 ```
+
+> **注意**：配置文件会自动保存为 `{config-name}.json`
 
 **主要方法**
 
 ```typescript
-// 获取配置值
-const value = config.get<T>('key.path')
+// 获取配置值（支持深层路径）
+const value = config.get('key.path')
 
-// 设置配置值
-config.set<T>('key.path', value, save?: boolean)
+// 获取整个配置对象
+const allConfig = config.get('')
 
 // 获取数组配置（返回 EnhancedArray）
-const arr = config.getArray<T>('key.path')
+const arr = config.get('users', true)  // 第二个参数为 true 表示返回数组
+// 或使用第三个参数提供默认值
+const arrWithDefault = config.get('users', true, [])
+
+// 获取默认配置
+const defaultValue = config.getDef('key.path')
+const allDefaults = config.getDef('')
+
+// 设置配置值
+config.set('key.path', value, true)   // 第三个参数为 true 表示立即保存
+config.set('key.path', value, false)  // false 表示不立即保存
 
 // 监听配置变化（文件修改时触发）
 config.watch((self, oldData, newData) => {
@@ -115,8 +174,8 @@ const isEnabled = config.get<boolean>('enable')
 // 设置配置
 config.set('settings.timeout', 10000, true)
 
-// 获取数组
-const users = config.getArray<string>('users')
+// 获取数组（第二个参数为 true）
+const users = config.get('users', true)
 users.add('user1', true, true)
 
 // 监听配置文件变化
@@ -144,39 +203,54 @@ config.watch((self, oldData, newData) => {
 // 检查元素是否存在
 arr.has(element)
 
-// 添加单个元素
-arr.add(element, isEqual: boolean, save: boolean)
+// 添加单个元素（isEqual: 是否去重，save: 是否保存）
+arr.add(element, isEqual, save)
 
 // 批量添加元素
-arr.addSome(elements, isEqual: boolean, save: boolean)
+arr.addSome(elements, isEqual, save)
 
-// 删除元素
-arr.remove(predicate, save: boolean)
-arr.remove(index, save: boolean, true)  // 按索引删除
+// 按条件删除元素
+arr.remove(predicate, save)
 
-// 批量删除元素
-arr.removeSome(elements, save: boolean)
+// 按索引删除元素
+arr.pullAt(index, save)
+
+// 批量删除指定元素
+arr.pullAll(elements, save)
+
+// 清空数组（不保存）
+arr.clear()
 ```
 
 **示例**
 
 ```typescript
-const users = config.getArray<string>('users')
+// 获取数组配置
+const users = config.get('users', true)
 
-// 添加元素（去重）
+// 添加元素（去重 + 保存）
 users.add('user1', true, true)
 
-// 批量添加
+// 批量添加（去重 + 保存）
 users.addSome(['user2', 'user3'], true, true)
-
-// 删除元素
-users.remove('user1', true)
 
 // 按条件删除
 users.remove(user => user.startsWith('test'), true)
 
 // 按索引删除
-users.remove(0, true, true)
+users.pullAt(0, true)
+
+// 批量删除指定元素
+users.pullAll(['user1', 'user2'], true)
+
+// 检查元素是否存在
+if (users.has('user1')) {
+  console.log('用户存在')
+}
+
+// 清空数组（需要手动保存）
+users.clear()
+config.save()
 ```
 
 ---
@@ -212,31 +286,33 @@ const dbList = Database.details
 **列定义方法**
 
 ```typescript
-// 1. 普通列 - Column(type, defaultValue, options?)
+// 1. 主键列 - PkColumn(key, type, options?)
+Database.PkColumn(
+  'userId',           // 列名（必须与 schema 中的 key 一致）
+  'STRING',           // 数据类型：STRING, INTEGER 等
+  {                   // 可选配置（已包含 primaryKey: true, allowNull: false）
+    autoIncrement: true  // 自动递增（仅数字类型）
+  }
+)
+
+// 2. 普通列 - Column(key, type, defaultValue, options?)
 Database.Column(
+  'nickname',         // 列名（必须与 schema 中的 key 一致）
   'STRING',           // 数据类型：STRING, INTEGER, BOOLEAN, TEXT 等
-  'default',          // 默认值
+  'Guest',            // 默认值
   {                   // 可选配置
     allowNull: false, // 是否允许为空
     unique: true      // 是否唯一
   }
 )
 
-// 2. 主键列 - PkColumn(type, options?)
-Database.PkColumn(
-  'STRING',           // 数据类型
-  {                   // 可选配置（已包含 primaryKey: true, allowNull: false）
-    autoIncrement: true  // 自动递增（仅数字类型）
-  }
-)
-
 // 3. 数组列 - ArrayColumn(key, transformFn?)
 Database.ArrayColumn(
   'tags',             // 列名（必须与 schema 中的 key 一致）
-  (data) => data      // 可选：数据转换函数
+  (data) => data      // 可选：数据转换函数（在 set 时调用）
 )
 // 存储格式：逗号分隔的字符串 "tag1,tag2,tag3"
-// 读取返回：DatabaseArray<T> 类型
+// 读取返回：DatabaseArray<T> 类型（扩展数组，支持 push、splice 等标准数组方法）
 
 // 4. JSON 列 - JsonColumn(key, defaultValue)
 Database.JsonColumn(
@@ -252,29 +328,34 @@ Database.JsonColumn(
 ```typescript
 import { Database } from 'karin-plugin-mys-core/database'
 
-const userSchema = {
-  // 主键列：只需指定类型
-  userId: Database.PkColumn('STRING'),
+// Schema 使用数组形式
+const userSchema = [
+  // 主键列：列名 + 数据类型 + 可选配置
+  Database.PkColumn('userId', 'STRING'),
   
-  // 普通列：类型 + 默认值 + 可选配置
-  nickname: Database.Column('STRING', 'Guest', { allowNull: false }),
-  email: Database.Column('STRING', '', { unique: true }),
-  age: Database.Column('INTEGER', 0),
-  active: Database.Column('BOOLEAN', true),
-  bio: Database.Column('TEXT', ''),
+  // 普通列：列名 + 数据类型 + 默认值 + 可选配置
+  Database.Column('nickname', 'STRING', 'Guest', { allowNull: false }),
+  Database.Column('email', 'STRING', '', { unique: true }),
+  Database.Column('age', 'INTEGER', 0),
+  Database.Column('active', 'BOOLEAN', true),
+  Database.Column('bio', 'TEXT', ''),
   
-  // 数组列：列名必须与 key 一致
-  tags: Database.ArrayColumn('tags'),
+  // 数组列：列名 + 可选转换函数
+  Database.ArrayColumn('tags'),
   // 或带转换函数
-  roles: Database.ArrayColumn('roles', (data) => {
+  Database.ArrayColumn('roles', (data) => {
     return data.filter(role => role !== 'banned')
   }),
   
   // JSON 列：列名 + 默认值对象
-  profile: Database.JsonColumn('profile', { level: 1, exp: 0 }),
-  settings: Database.JsonColumn('settings', { theme: 'light' }),
-  metadata: Database.JsonColumn('metadata', {})
-}
+  Database.JsonColumn('profile', { level: 1, exp: 0 }),
+  Database.JsonColumn('settings', { theme: 'light' }),
+  Database.JsonColumn('metadata', {})
+]
+
+// 使用时
+const db = Database.get()
+await db.init('./data', 'users', userSchema, {}, DatabaseType.Db)
 ```
 
 **数据库类型**
@@ -310,7 +391,8 @@ const dbInstance = Database.get<UserType, DatabaseType.Db>()
 await dbInstance.init(
   './data',              // 数据目录
   'users',               // 表名
-  schema,                // 表结构
+  schema,                // 表结构（数组形式）
+  {},                    // Schema 定义（通常为空对象）
   DatabaseType.Db        // 数据库类型：SQL 数据库
 )
 // 存储位置：./data/database/sqlite3.db（表名：users）
@@ -320,7 +402,8 @@ const fileInstance = Database.get<ConfigType, DatabaseType.File>()
 await fileInstance.init(
   './data',              // 数据目录
   'configs',             // 目录名
-  schema,                // 数据结构
+  schema,                // 数据结构（数组形式）
+  {},                    // Schema 定义（通常为空对象）
   DatabaseType.File      // 数据库类型：单文件
 )
 // 存储位置：./data/configs/{userId}.json
@@ -330,7 +413,8 @@ const dirInstance = Database.get<ComplexType, DatabaseType.Dir>()
 await dirInstance.init(
   './data',              // 数据目录
   'userdata',            // 目录名
-  schema,                // 数据结构
+  schema,                // 数据结构（数组形式）
+  {},                    // Schema 定义（通常为空对象）
   DatabaseType.Dir       // 数据库类型：目录
 )
 // 存储位置：./data/userdata/{userId}/*.json
@@ -342,20 +426,27 @@ await dirInstance.init(
 
 ```typescript
 // 查找记录（主键）
-const record = await db.findByPk(pk, create?: boolean)
+const record = await db.findByPk(pk)              // 不存在返回 undefined
+const record = await db.findByPk(pk, true)        // 不存在则创建
 
 // 查找多个记录（批量查询）
-const records = await db.findAllByPks(pks)
+const records = await db.findAllByPks(['pk1', 'pk2', 'pk3'])
 
-// 查找所有记录（可排除指定主键）
-const allRecords = await db.findAll(excludePks?: string[])
+// 查找所有记录
+const allRecords = await db.findAll()             // 查找所有
+const someRecords = await db.findAll(['pk1'])     // 排除指定主键
 
-// 保存记录
-await record.save({ key: value })
+// 保存记录（会自动合并数据，只更新提供的字段）
+await record.save({ 
+  nickname: 'new name',   // 只更新这些字段
+  level: 10 
+})
 
 // 删除记录
-await record.destroy()
+await record.destroy()  // 删除数据库记录/文件/目录
 ```
+
+> **注意**：`save` 方法会自动过滤未定义的字段，并与现有数据合并
 
 **示例**
 
@@ -364,20 +455,20 @@ await record.destroy()
 ```typescript
 import { Database, DatabaseType } from 'karin-plugin-mys-core/database'
 
-// 定义用户表结构（注意参数顺序）
-const userSchema = {
-  userId: Database.PkColumn('STRING'),                        // 主键
-  nickname: Database.Column('STRING', '', { allowNull: false }), // 默认值 '', 不允许为空
-  level: Database.Column('INTEGER', 1),                       // 默认值 1
-  coins: Database.Column('INTEGER', 0),                       // 默认值 0
-  vip: Database.Column('BOOLEAN', false),                     // 默认值 false
-  tags: Database.ArrayColumn('tags'),                         // 数组列
-  data: Database.JsonColumn('data', {})                       // JSON 列，默认值 {}
-}
+// 定义用户表结构（数组形式）
+const userSchema = [
+  Database.PkColumn('userId', 'STRING'),                                      // 主键
+  Database.Column('nickname', 'STRING', '', { allowNull: false }),            // 默认值 '', 不允许为空
+  Database.Column('level', 'INTEGER', 1),                                     // 默认值 1
+  Database.Column('coins', 'INTEGER', 0),                                     // 默认值 0
+  Database.Column('vip', 'BOOLEAN', false),                                   // 默认值 false
+  Database.ArrayColumn('tags'),                                               // 数组列
+  Database.JsonColumn('data', {})                                             // JSON 列，默认值 {}
+]
 
 // 初始化 SQL 数据库
 const userDB = Database.get<UserType, DatabaseType.Db>()
-await userDB.init('./data', 'users', userSchema, DatabaseType.Db)
+await userDB.init('./data', 'users', userSchema, {}, DatabaseType.Db)
 
 // 操作数据
 const user = await userDB.findByPk('123456', true)  // 不存在则创建
@@ -399,17 +490,17 @@ const allUsers = await userDB.findAll()
 ```typescript
 import { Database, DatabaseType } from 'karin-plugin-mys-core/database'
 
-// 定义配置结构（注意参数顺序）
-const configSchema = {
-  key: Database.PkColumn('STRING'),                    // 主键
-  value: Database.Column('TEXT', ''),                  // 默认值 ''
-  type: Database.Column('STRING', 'string'),           // 默认值 'string'
-  updatedAt: Database.Column('INTEGER', 0)             // 默认值 0
-}
+// 定义配置结构（数组形式）
+const configSchema = [
+  Database.PkColumn('key', 'STRING'),                    // 主键
+  Database.Column('value', 'TEXT', ''),                  // 默认值 ''
+  Database.Column('type', 'STRING', 'string'),           // 默认值 'string'
+  Database.Column('updatedAt', 'INTEGER', 0)             // 默认值 0
+]
 
 // 初始化文件存储
 const configDB = Database.get<ConfigType, DatabaseType.File>()
-await configDB.init('./config', 'settings', configSchema, DatabaseType.File)
+await configDB.init('./config', 'settings', configSchema, {}, DatabaseType.File)
 
 // 操作配置
 const config = await configDB.findByPk('app_name', true)
@@ -427,18 +518,18 @@ await config.save({
 ```typescript
 import { Database, DatabaseType } from 'karin-plugin-mys-core/database'
 
-// 定义复杂数据结构（注意参数顺序）
-const complexSchema = {
-  userId: Database.PkColumn('STRING'),                           // 主键
-  profile: Database.JsonColumn('profile', {}),                   // JSON 列，默认值 {}
-  inventory: Database.JsonColumn('inventory', { items: [] }),    // JSON 列，默认值 { items: [] }
-  achievements: Database.ArrayColumn('achievements'),            // 数组列
-  settings: Database.JsonColumn('settings', {})                  // JSON 列，默认值 {}
-}
+// 定义复杂数据结构（数组形式）
+const complexSchema = [
+  Database.PkColumn('userId', 'STRING'),                           // 主键
+  Database.JsonColumn('profile', {}),                              // JSON 列，默认值 {}
+  Database.JsonColumn('inventory', { items: [] }),                 // JSON 列，默认值 { items: [] }
+  Database.ArrayColumn('achievements'),                            // 数组列
+  Database.JsonColumn('settings', {})                              // JSON 列，默认值 {}
+]
 
 // 初始化目录存储
 const complexDB = Database.get<ComplexType, DatabaseType.Dir>()
-await complexDB.init('./data', 'userdata', complexSchema, DatabaseType.Dir)
+await complexDB.init('./data', 'userdata', complexSchema, {}, DatabaseType.Dir)
 
 // 操作数据
 const userData = await complexDB.findByPk('123456', true)
@@ -476,16 +567,26 @@ Database.default(Dialect.PostgreSQL)  // 或 MySQL, MariaDB
 
 **内置表**
 
+插件提供了三个内置的米游社相关表：
+
 ```typescript
 import { 
-  MysUserInfoDB,      // 用户信息表
-  MysAccountInfoDB,   // 账号信息表
-  MysDeviceInfoDB     // 设备信息表
+  MysUserInfoDB,      // 用户信息表：存储用户的 ltuid、stuid 等信息
+  MysAccountInfoDB,   // 账号信息表：存储米游社账号的 cookie、stoken 等
+  MysDeviceInfoDB     // 设备信息表：存储设备信息（设备指纹等）
 } from 'karin-plugin-mys-core/database'
 
-// 使用内置表
+// 使用内置表（需要 await）
 const userDB = await MysUserInfoDB()
 const user = await userDB.findByPk(userId, true)
+
+// 账号信息表
+const accountDB = await MysAccountInfoDB()
+const account = await accountDB.findByPk(ltuid, true)
+
+// 设备信息表
+const deviceDB = await MysDeviceInfoDB()
+const device = await deviceDB.findByPk(deviceMd5, true)
 ```
 
 ---
@@ -567,12 +668,16 @@ import { GameUserInfo } from './GameUserInfo'  // 你的游戏用户信息类
 
 // 创建游戏注册对象
 const MyGame = new RegisterGameBase(
-  'game_key',              // 游戏标识（如：gs, sr, zzz）
+  'gs',                    // 游戏标识（如：gs, sr, zzz）
   '原神',                  // 游戏名称
-  /^#?(原神|gs)/i,        // 指令前缀匹配正则
+  ['原神', 'gs', 'ys'],    // 指令前缀数组（不含 #）
   GameUserInfo,            // 游戏用户信息类
-  (info) => {              // UID 刷新函数
-    return info.map(item => item.game_uid)
+  async (info, options) => {   // UID 刷新函数
+    // info: 米游社返回的角色列表
+    // options: { userId, cookie, ltuid, type }
+    return info
+      .filter(role => role.game_biz === 'hk4e_cn')  // 过滤对应游戏
+      .map(role => role.game_uid)                   // 返回 UID 数组
   }
 )
 
@@ -583,12 +688,12 @@ MysGame.RegisterGame(MyGame)
 **游戏匹配**
 
 ```typescript
-// 通过指令前缀匹配游戏
-const game = MysGame.match('#原神角色')
+// 通过指令前缀匹配游戏（传入去掉 # 的指令前缀）
+const game = MysGame.match('原神')  // 或 'gs', 'ys'
 if (game) {
-  console.log('匹配到游戏:', game.name)
-  console.log('游戏标识:', game.game)
-  console.log('列键名:', game.columnKey)  // 'gs-uids'
+  console.log('匹配到游戏:', game.name)      // '原神'
+  console.log('游戏标识:', game.game)        // 'gs'
+  console.log('列键名:', game.columnKey)     // { uids: 'gs-uids', main: 'gs-main' }
 }
 ```
 
@@ -636,11 +741,11 @@ class GenshinUserInfo extends GameUserInfoBase<GenshinUserInfoTableType> {
 
 // 2. 创建并注册游戏
 const Genshin = new RegisterGameBase(
-  'gs',                    // 游戏标识
-  '原神',                  // 游戏名称
-  /^#?(原神|gs|ys)/i,     // 匹配 #原神 #gs #ys
-  GenshinUserInfo,         // 用户信息类
-  (roleList) => {          // UID 提取函数
+  'gs',                         // 游戏标识
+  '原神',                       // 游戏名称
+  ['原神', 'gs', 'ys'],         // 指令前缀数组（不含 #）
+  GenshinUserInfo,              // 用户信息类
+  async (roleList, options) => {     // UID 提取函数
     return roleList
       .filter(role => role.game_biz === 'hk4e_cn')
       .map(role => role.game_uid)
@@ -650,7 +755,7 @@ const Genshin = new RegisterGameBase(
 MysGame.RegisterGame(Genshin)
 
 // 3. 使用游戏
-const game = MysGame.match('#原神角色')
+const game = MysGame.match('原神')  // 去掉 # 的指令前缀
 if (game) {
   // 创建用户信息
   const userInfo = await game.UserInfo.create(userId)
@@ -781,15 +886,11 @@ render.plugin
 //   name: string              // 插件名称
 //   version: string           // 插件版本
 //   resources: {
-//     default: string         // 插件内部资源路径
-//     download: string        // 插件外部资源路径
+//     default: string         // 插件内部资源路径（绝对路径）
+//     download: string        // 插件外部资源路径（@karinjs 目录，绝对路径）
 //   }
 //   ...customOptions          // 自定义选项
 // }
-
-// 获取 Karin 版本信息
-render.karin
-// 返回: { version: string }
 ```
 
 **template 方法**
@@ -803,11 +904,11 @@ async template<C extends React.ComponentType<any>>(
   props: React.ComponentProps<C>,        // 组件 props
   options?: {
     type?: 'png' | 'jpeg' | 'webp'      // 图片格式，默认 'jpeg'
-    plugin?: Record<string, any>         // 额外插件参数
+    plugin?: Record<string, any>         // 额外插件参数（当前未使用）
     render?: {                           // 渲染选项
-      name?: string                      // 文件名（不含后缀）
+      name?: string                      // 文件名（不含后缀），默认使用模板名+随机字符串
       setViewport?: {
-        deviceScaleFactor?: number       // 设备缩放比例，默认 2
+        deviceScaleFactor?: number       // 设备缩放比例，默认 3
       }
       // 更多 karin.render 选项...
     }
@@ -1037,10 +1138,16 @@ const image = await render.template('content', ContentCard, {
 **注意事项**
 
 1. **CSS 文件位置**：CSS 文件必须位于 `resources/styles/{插件名}.css`，否则样式无法加载
-2. **图片格式**：`png` 支持透明背景，`jpeg` 文件更小，`webp` 是现代格式
-3. **性能优化**：使用 `deviceScaleFactor: 2` 可获得高清图片，但会增加渲染时间
+2. **图片格式**：
+   - `jpeg`（默认）：文件更小，适合大多数场景，不支持透明背景
+   - `png`：支持透明背景，文件较大
+   - `webp`：现代格式，体积小且质量好
+3. **性能优化**：默认使用 `deviceScaleFactor: 3` 渲染高清图片，可自定义降低以提升速度
 4. **临时文件**：HTML 临时文件保存在 `@karinjs/temp/html/{插件名}/{模板名}/` 目录
-5. **资源路径**：在组件中使用 `render.plugin.resources.default` 访问插件资源
+5. **资源路径**：
+   - `render.plugin.resources.default`：插件内部资源（开发时的 resources 目录）
+   - `render.plugin.resources.download`：插件外部资源（@karinjs 目录下的 resources）
+6. **选择器**：默认使用 `container` 选择器，确保你的根元素有 `container` 类名或根据需要自定义选择器
 
 ---
 
