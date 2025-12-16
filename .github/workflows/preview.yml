@@ -35,24 +35,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      # 生成预览版本号（基于当前版本 + PR 号 + commit SHA）
-      - name: Generate preview version
-        id: version
-        run: |
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          PREVIEW_VERSION="${CURRENT_VERSION}-pr${PR_NUMBER}.${SHORT_SHA}"
-          echo "version=${PREVIEW_VERSION}" >> $GITHUB_OUTPUT
-          echo "预览版本: ${PREVIEW_VERSION}"
-
-      # 更新 package.json 中的版本号
-      - name: Update package.json version
-        run: |
-          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
-
       # 使用 pkg.pr.new 发布预览版本
       - name: Publish to pkg.pr.new
-        run: npx pkg-pr-new publish --compact --comment=update
+        run: npx pkg-pr-new publish --compact --comment=update --template=compact
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
