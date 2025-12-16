@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.23](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.22...v1.0.23) (2025-12-16)
+
+
+### Bug Fixes
+
+* 优化表定义 ([aa10431](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/aa104317f85e0c29cd4c6d1d79d91c896b2785b5))
+* 升级 release-please 到 v4 并添加配置文件 ([60370f7](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/60370f732f7050c3c1bbbf287458734808d96ba5))
+* 更新工作流 ([c6237b0](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/c6237b05dccd06bfcb66c587c63cfbf8fe0440e5))
+* 更新工作流 ([95c4bdc](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/95c4bdca79000c68c8ac3c5c758d2fad54c7ec54))
+* 更新工作流 ([cfd364a](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/cfd364a4bc162083d9c1e08e3ad8e6229e5f8cd4))
+* 更新工作流 ([e7c4023](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/e7c40234693d25ed3872344254637cbae0651e55))
+
 ## [1.0.22](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.21...v1.0.22) (2025-12-16)
 
 
