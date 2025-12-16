@@ -1,0 +1,37 @@
+name: Publish Preview # 发布预览版本的工作流程名称
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  push:
+    branches-ignore:
+      - main # 除了 main 分支外的其他分支推送时触发
+
+permissions:
+  contents: read
+  pull-requests: write # 需要写权限以便评论 PR
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      # 检出代码
+      - name: Checkout
+        uses: actions/checkout@v4
+      # 设置 Node.js 环境
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # 安装依赖
+      - name: Install dependencies
+        run: npm install --frozen-lockfile
+      # 编译
+      - name: Build
+        run: npm run build
+      # 使用 pkg.pr.new 发布预览版本
+      - name: Publish to pkg.pr.new
+        run: npx pkg-pr-new publish --compact --comment=update
