@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main # 仅当推送到 main 分支时触发
+  pull_request: # 添加 PR 触发器
+    branches:
+      - main
 
 permissions:
   id-token: write
@@ -14,6 +17,7 @@ jobs:
   release-please:
     # 设置工作流程运行环境为 Ubuntu
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' # 仅在 push 事件时运行(包括直接推送和 PR 合并)
     steps:
       # 使用 release-please-action@v3 动作
       - uses: google-github-actions/release-please-action@v3
@@ -23,6 +27,7 @@ jobs:
           release-type: node
       # 检出代码
       - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.release_created }}
       # 设置 Node.js 环境
       - uses: actions/setup-node@v4
         with:
@@ -30,29 +35,19 @@ jobs:
           node-version: 20
           # 设置 npm 注册表 URL
           registry-url: https://registry.npmjs.org
+          if: ${{ steps.release.outputs.release_created }}
       # 安装依赖
       - run: npm install
+        if: ${{ steps.release.outputs.release_created }}
       # 升级npm版本
       - run: npm install -g npm@latest
         if: ${{ steps.release.outputs.release_created }}
       # 编译
       - run: npm run build
+        if: ${{ steps.release.outputs.release_created }}
       # 删除开发依赖
       - run: npm pkg delete devDependencies
-      # 修改版本号为 beta 格式
-      - name: Update version to beta
-        run: |
-          $version = node -p "require('./package.json').version"
-          $shortSha = "${{ github.sha }}".Substring(0, 7)
-          $betaVersion = "$version-beta-$shortSha"
-          npm version $betaVersion --no-git-tag-version
-          Write-Host "Updated version to: $betaVersion"
-        shell: pwsh
-        if: ${{ !steps.release.outputs.release_created }}
-      # 发布到预览
-      - name: Publish to pkg.pr.new
-        run: npx pkg-pr-new publish
-        if: ${{ !steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.release_created }}
       # 发布npm
       - run: npm run pub
         if: ${{ steps.release.outputs.release_created }}
@@ -60,3 +55,35 @@ jobs:
       - name: Sync to npmmirror.com
         run: npm install cnpm -g && cnpm sync --no-progress && echo "Sync completed"
         if: ${{ steps.release.outputs.release_created }}
+
+  preview:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' # 只在 PR 时运行
+    steps:
+      # 检出代码
+      - uses: actions/checkout@v4
+      # 设置 Node.js 环境
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          # 设置 npm 注册表 URL
+          registry-url: https://registry.npmjs.org
+      # 安装依赖
+      - name: Install dependencies
+        run: npm install
+      # 构建项目
+      - name: Build
+        run: npm run build
+      # 修改版本号为 beta 格式
+      - name: Update version to beta
+        run: |
+          $version = node -p "require('./package.json').version"
+          $prNumber = "${{ github.event.pull_request.number }}"
+          $shortSha = "${{ github.event.pull_request.head.sha }}".Substring(0, 7)
+          $betaVersion = "$version-beta-pr$prNumber-$shortSha"
+          npm version $betaVersion --no-git-tag-version
+          Write-Host "Updated version to: $betaVersion"
+        shell: pwsh
+      # 发布到 pkg.pr.new
+      - name: Publish to pkg.pr.new
+        run: npx pkg-pr-new publish
