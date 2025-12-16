@@ -4,7 +4,7 @@ import lodash from 'node-karin/lodash'
 import fs from 'node:fs'
 import path from 'node:path'
 import { Model, ModelStatic } from 'sequelize'
-import { DatabaseReturn, DatabaseType, ModelAttributes } from '../types'
+import { ColumnOptionType, DatabaseReturn, DatabaseType, ModelAttributes } from '../types'
 
 export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   primaryKey: keyof T | undefined
@@ -38,10 +38,10 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     const result: Record<string, any> = {
       [primaryKey]: pk
     }
-    lodash.forEach(this.modelSchema, (value, key) => {
+    this.modelSchema.forEach(({ key, type, Option }) => {
       if (key !== primaryKey) {
-        const Value = typeof value.defaultValue === 'function' ? value.defaultValue() : value.defaultValue
-        result[key] = value.JsonColumn ? JSON.parse(Value) : value.ArrayColumn ? Value.split(',') : Value
+        const Value = typeof Option.defaultValue === 'function' ? Option.defaultValue() : Option.defaultValue
+        result[key as string] = type === ColumnOptionType.Json ? JSON.parse(Value) : ColumnOptionType.Array ? Value.split(',') : Value
       }
     })
 
@@ -89,11 +89,11 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   writeDirSync (pk: string, data: Record<string, any>) {
     const path = this.userPath(pk)
 
-    lodash.forEach(this.modelSchema, (value, key) => {
+    this.modelSchema.forEach(({ key, type, Option }) => {
       if (key !== this.primaryKey!) {
-        const mergeData = common.filterData(data[key], value.defaultValue, this.modelSchemaDefine[key])
+        const mergeData = common.filterData(data[key as string], Option.defaultValue, this.modelSchemaDefine[key])
 
-        json.writeSync(`${path}/${key}.json`, {
+        json.writeSync(`${path}/${key as string}.json`, {
           key,
           [this.primaryKey!]: pk,
           data: mergeData

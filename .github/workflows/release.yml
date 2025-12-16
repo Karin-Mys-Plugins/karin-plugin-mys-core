@@ -39,6 +39,17 @@ jobs:
       - run: npm run build
       # 删除开发依赖
       - run: npm pkg delete devDependencies
+      # 修改版本号为 beta 格式
+      - name: Update version to beta
+        run: |
+          $version = node -p "require('./package.json').version"
+          $prNumber = "${{ github.event.pull_request.number }}"
+          $shortSha = "${{ github.event.pull_request.head.sha }}".Substring(0, 7)
+          $betaVersion = "$version-beta-pr$prNumber-$shortSha"
+          npm version $betaVersion --no-git-tag-version
+          Write-Host "Updated version to: $betaVersion"
+        shell: pwsh
+        if: ${{ !steps.release.outputs.release_created }}
       # 发布到预览
       - name: Publish to pkg.pr.new
         run: npx pkg-pr-new publish

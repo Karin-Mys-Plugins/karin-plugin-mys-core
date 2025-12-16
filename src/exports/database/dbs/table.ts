@@ -1,6 +1,6 @@
 import { Model } from 'sequelize'
 import { Database } from '../database'
-import { DatabaseClassInstance, DatabaseType, Dialect, ModelAttributes } from '../types'
+import { DatabaseClassInstance, DatabaseType, Dialect, ModelAttributes, ValidateSchema } from '../types'
 
 export class Table<
   TableType extends Record<string, any>,
@@ -48,8 +48,11 @@ export class Table<
     }
   }
 
-  async init (Schema: ModelAttributes<Model, TableType>, SchemaDefine: Partial<Record<keyof TableType, any>> = {}) {
-    this.modelSchema = Schema
+  async init<const S extends readonly { key: keyof TableType }[]> (
+    Schema: ValidateSchema<TableType, S>,
+    SchemaDefine: Partial<Record<keyof TableType, any>> = {}
+  ) {
+    this.modelSchema = Schema as any
     this.modelSchemaDefine = SchemaDefine
 
     this.initCache = await this.#Database.init(
@@ -59,8 +62,10 @@ export class Table<
     return this.#cache<TableType>()
   }
 
-  async addSchem<newTableType extends ExtraTableType> (newSchema: ModelAttributes<Model, newTableType>, SchemaDefine: Partial<Record<keyof newTableType, any>> = {}) {
-    this.modelSchema = Object.assign(this.modelSchema, newSchema)
+  async addSchem<newTableType extends ExtraTableType, const S extends readonly { key: keyof newTableType }[]> (
+    newSchema: ValidateSchema<newTableType, S>, SchemaDefine: Partial<Record<keyof newTableType, any>> = {}
+  ) {
+    this.modelSchema.push(...newSchema as any)
     this.modelSchemaDefine = Object.assign(this.modelSchemaDefine, SchemaDefine)
 
     this.initCache = await this.#Database.init(

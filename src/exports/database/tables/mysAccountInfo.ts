@@ -8,11 +8,11 @@ export const MysAccountInfoTable = createTable<MysAccountInfoTableType>(
 )
 
 export const MysAccountInfoDB = await MysAccountInfoTable.init(
-  {
-    ltuid: Database.PkColumn('STRING'),
-    type: Database.Column('STRING', MysAccountType.cn),
-    cookie: Database.Column('TEXT', ''),
-    stoken: Database.Column('STRING', ''),
-    deviceMd5: Database.Column('STRING', ''),
-  }
+  [
+    Database.PkColumn('ltuid', 'STRING'),
+    Database.Column('type', 'STRING', MysAccountType.cn),
+    Database.Column('cookie', 'TEXT', ''),
+    Database.Column('stoken', 'STRING', ''),
+    Database.Column('deviceMd5', 'STRING', '')
+  ]
 )

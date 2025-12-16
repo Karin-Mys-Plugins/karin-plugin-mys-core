@@ -1,7 +1,7 @@
 import { logger } from 'node-karin'
 import { DataTypes, Model, ModelAttributeColumnOptions } from 'sequelize'
 import { Sqlite3, Sqlite3Static } from './dbs/sqlite3'
-import { DatabaseClassStatic, DatabaseFn, DatabaseType, Dialect } from './types'
+import { ColumnOption, ColumnOptionType, DatabaseClassStatic, DatabaseFn, DatabaseType, Dialect } from './types'
 
 export const Database = new class DatabaseClass {
   #defaultDialect = Dialect.Sqlite
@@ -51,13 +51,17 @@ export const Database = new class DatabaseClass {
   }
 
   get PkColumn () {
-    return (
-      type: keyof typeof DataTypes, option?: Partial<ModelAttributeColumnOptions<Model>>
-    ): ModelAttributeColumnOptions<Model> => ({
-      type: DataTypes[type],
-      primaryKey: true,
-      allowNull: false,
-      ...option
+    return <K extends string> (
+      key: K, type: keyof typeof DataTypes, option?: Partial<ModelAttributeColumnOptions<Model>>
+    ): ColumnOption<ColumnOptionType.Normal, K> => ({
+      key,
+      type: ColumnOptionType.Normal,
+      Option: {
+        type: DataTypes[type],
+        primaryKey: true,
+        allowNull: false,
+        ...option
+      }
     })
   }
 

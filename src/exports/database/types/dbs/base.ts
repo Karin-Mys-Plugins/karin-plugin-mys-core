@@ -20,11 +20,16 @@ export enum DatabaseType {
 }
 
 export type ModelAttributes<M extends Model = Model, TAttributes = any> = {
-  /**
-   * The description of a database column
-   */
-  [name in keyof TAttributes]: ModelAttributeColumnOptions<M> & { ArrayColumn?: true, JsonColumn?: true }
-}
+  key: keyof TAttributes
+  type: ColumnOptionType
+  Option: ModelAttributeColumnOptions<M>
+}[]
+
+type ExtractSchemaKeys<T extends readonly any[]> = T[number]['key']
+
+export type ValidateSchema<TAttributes, S extends readonly { key: any }[]> = keyof TAttributes extends ExtractSchemaKeys<S>
+  ? ExtractSchemaKeys<S> extends keyof TAttributes ? S : `❌ Schema 包含了多余的键：${Exclude<ExtractSchemaKeys<S>, keyof TAttributes>}`
+  : keyof TAttributes extends string ? `❌ Schema 缺少必需的键：${Exclude<keyof TAttributes, ExtractSchemaKeys<S>>}` : never
 
 export interface DatabaseReturn<T> {
   [DatabaseType.Db]: T & {
@@ -117,23 +122,33 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
   destroy (pk: string): Promise<boolean>
 }
 
+export const enum ColumnOptionType {
+  Normal = 'normal',
+  Array = 'array',
+  Json = 'json',
+}
+
+export interface ColumnOption<T extends ColumnOptionType, K extends string> {
+  key: K; type: T; Option: ModelAttributeColumnOptions<Model>
+}
+
 export interface DatabaseClassStatic {
   /** @description 数据库标识 */
   dialect: Dialect
   /** @description 数据库说明 */
   description: string
 
-  Column<T> (
-    type: keyof typeof DataTypes, def: T, option?: Partial<ModelAttributeColumnOptions<Model>>
-  ): ModelAttributeColumnOptions<Model>
+  Column<T, K extends string> (
+    key: K, type: keyof typeof DataTypes, def: T, option?: Partial<ModelAttributeColumnOptions<Model>>
+  ): ColumnOption<ColumnOptionType.Normal, K>
 
-  ArrayColumn<T> (
-    key: string, fn?: (data: DatabaseArray<T>) => T[]
-  ): ModelAttributeColumnOptions<Model> & { ArrayColumn: true }
+  ArrayColumn<T, K extends string> (
+    key: K, fn?: (data: DatabaseArray<T>) => T[]
+  ): ColumnOption<ColumnOptionType.Array, K>
 
-  JsonColumn<T extends Record<string, any>> (
-    key: string, def: T
-  ): ModelAttributeColumnOptions<Model> & { JsonColumn: true }
+  JsonColumn<T extends Record<string, any>, K extends string> (
+    key: K, def: T
+  ): ColumnOption<ColumnOptionType.Json, K>
 }
 
 export class DatabaseArray<T> extends Array<T> {

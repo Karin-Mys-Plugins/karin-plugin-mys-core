@@ -8,10 +8,10 @@ export const MysUserInfoTable = createTable<BaseUserInfoTableType, BaseGameUIDIn
 )
 
 export const MysUserInfoDB = await MysUserInfoTable.init(
-  {
-    userId: Database.PkColumn('STRING'),
-    ltuids: Database.ArrayColumn('ltuids'),
-    stuids: Database.ArrayColumn('stuids'),
-    deviceList: Database.ArrayColumn('deviceList'),
-  }
+  [
+    Database.PkColumn('userId', 'STRING'),
+    Database.ArrayColumn('ltuids'),
+    Database.ArrayColumn('stuids'),
+    Database.ArrayColumn('deviceList')
+  ]
 )

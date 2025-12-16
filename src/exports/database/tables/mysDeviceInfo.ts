@@ -9,16 +9,16 @@ export const MysDeviceInfoTable = createTable<MysDeviceInfoTableType>(
 )
 
 export const MysDeviceInfoDB = await MysDeviceInfoTable.init(
-  {
-    md5: Database.PkColumn('STRING'),
-    deviceId: Database.Column('STRING', common.getDeviceGuid),
-    deviceFp: Database.Column('STRING', ''),
-    name: Database.Column('STRING', ''),
-    board: Database.Column('STRING', ''),
-    model: Database.Column('STRING', ''),
-    oaid: Database.Column('STRING', ''),
-    version: Database.Column('INTEGER', 12),
-    fingerprint: Database.Column('STRING', ''),
-    product: Database.Column('STRING', ''),
-  }
+  [
+    Database.PkColumn('md5', 'STRING'),
+    Database.Column('deviceId', 'STRING', common.getDeviceGuid),
+    Database.Column('deviceFp', 'STRING', ''),
+    Database.Column('name', 'STRING', ''),
+    Database.Column('board', 'STRING', ''),
+    Database.Column('model', 'STRING', ''),
+    Database.Column('oaid', 'STRING', ''),
+    Database.Column('version', 'INTEGER', 12),
+    Database.Column('fingerprint', 'STRING', ''),
+    Database.Column('product', 'STRING', ''),
+  ]
 )

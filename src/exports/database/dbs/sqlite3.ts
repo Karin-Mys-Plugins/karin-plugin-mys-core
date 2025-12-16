@@ -3,7 +3,7 @@ import { existsSync, json, logger, mkdirSync, rmSync } from 'node-karin'
 import fs from 'node:fs'
 import path from 'node:path'
 import { DataTypes, Model, ModelAttributeColumnOptions, Op, Sequelize } from 'sequelize'
-import { DatabaseArray, DatabaseClassInstance, DatabaseClassStatic, DatabaseReturn, DatabaseType, Dialect, ModelAttributes } from '../types'
+import { ColumnOption, ColumnOptionType, DatabaseArray, DatabaseClassInstance, DatabaseClassStatic, DatabaseReturn, DatabaseType, Dialect, ModelAttributes } from '../types'
 import { DbBase } from './base'
 
 const dialect = Dialect.Sqlite
@@ -36,14 +36,18 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
 
       const queryInterface = sequelize.getQueryInterface()
       const tableDescription = await queryInterface.describeTable(this.modelName)
-      for (const key in this.modelSchema) {
-        if (!tableDescription[key]) {
-          await queryInterface.addColumn(this.modelName, key, this.modelSchema[key])
-          if (typeof this.modelSchema[key] === 'string') continue
 
-          const defaultValue = (this.modelSchema[key] as any).defaultValue
+      for (const Schema of this.modelSchema) {
+        const { key, Option } = Schema
+        const _key = key as string
+
+        if (!tableDescription[_key]) {
+          await queryInterface.addColumn(this.modelName, _key, Option)
+          if (typeof Option === 'string') continue
+
+          const defaultValue = Option.defaultValue
           if (defaultValue !== undefined) {
-            await this.model.update({ [key]: defaultValue }, { where: {} })
+            await this.model.update({ [_key]: defaultValue }, { where: {} })
           }
         }
       }
@@ -195,53 +199,63 @@ export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassSta
   dialect = dialect
   description = '插件默认数据库'
 
-  Column<T> (
-    type: keyof typeof DataTypes, def: T, option?: Partial<ModelAttributeColumnOptions<Model>>
-  ): ModelAttributeColumnOptions<Model> {
-    return {
-      type: DataTypes[type],
-      defaultValue: def,
-      ...option
-    }
-  }
-
-  ArrayColumn<T> (
-    key: string, fn?: (data: DatabaseArray<T>) => T[]
-  ): ModelAttributeColumnOptions<Model> & { ArrayColumn: true } {
-    return {
-      ArrayColumn: true,
-      type: DataTypes.STRING,
-      defaultValue: [].join(','),
-      get (): DatabaseArray<T> {
-        const data = this.getDataValue(key).split(',').filter(Boolean)
-        return new DatabaseArray<T>(data)
-      },
-      set (data: DatabaseArray<T>) {
-        const setData = (fn ? fn(data) : data) || []
-        this.setDataValue(key, setData.join(','))
+  Column = <T, K extends string> (
+    key: K, type: keyof typeof DataTypes, def: T, option?: Partial<ModelAttributeColumnOptions<Model>>
+  ): ColumnOption<ColumnOptionType.Normal, K> => (
+    {
+      key,
+      type: ColumnOptionType.Normal,
+      Option: {
+        type: DataTypes[type],
+        defaultValue: def,
+        ...option
       }
     }
-  }
+  )
 
-  JsonColumn<T> (
-    key: string, def: T
-  ): ModelAttributeColumnOptions<Model> & { JsonColumn: true } {
-    return {
-      JsonColumn: true,
-      type: DataTypes.STRING,
-      defaultValue: JSON.stringify(def),
-      get (): T {
-        let data = this.getDataValue(key)
-        try {
-          data = JSON.parse(data) || def
-        } catch (e) {
-          data = def
+  ArrayColumn = <T, K extends string> (
+    key: K, fn?: (data: DatabaseArray<T>) => T[]
+  ): ColumnOption<ColumnOptionType.Array, K> => (
+    {
+      key,
+      type: ColumnOptionType.Array,
+      Option: {
+        type: DataTypes.STRING,
+        defaultValue: [].join(','),
+        get (): DatabaseArray<T> {
+          const data = this.getDataValue(key).split(',').filter(Boolean)
+          return new DatabaseArray<T>(data)
+        },
+        set (data: DatabaseArray<T>) {
+          const setData = (fn ? fn(data) : data) || []
+          this.setDataValue(key, setData.join(','))
         }
-        return data
-      },
-      set (data: T) {
-        this.setDataValue(key, JSON.stringify(data))
       }
     }
-  }
+  )
+
+  JsonColumn = <T, K extends string> (
+    key: K, def: T
+  ): ColumnOption<ColumnOptionType.Json, K> => (
+    {
+      key,
+      type: ColumnOptionType.Json,
+      Option: {
+        type: DataTypes.STRING,
+        defaultValue: JSON.stringify(def),
+        get (this: Model): T {
+          let data = this.getDataValue(key)
+          try {
+            data = JSON.parse(data) || def
+          } catch (e) {
+            data = def
+          }
+          return data
+        },
+        set (this: Model, data: T) {
+          this.setDataValue(key, JSON.stringify(data))
+        }
+      }
+    }
+  )
 }()
