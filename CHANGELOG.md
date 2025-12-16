@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.21](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.20...v1.0.21) (2025-12-15)
+
+
+### Bug Fixes
+
+* 工作流 ([34d41db](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/34d41dbc399c6ec2c586458d49874f3f0c894c10))
+* 工作流使用npx ([76d099e](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/76d099e9051bd219d4968536269cfe137fa9e235))
+* 更新Layout ([575843a](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/575843a5ff9f5b119bbeaffd9b83fcc769380743))
+* 更新工作流 ([5ccb9bf](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/5ccb9bffcbd9db66d33cc51768c97123f5e6f591))
+* 更新工作流 ([378d56a](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/378d56a1e09b0197f8b256edbefdc51498fb2c99))
+* 更新工作流 ([ee549b4](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/ee549b46c98e2fe1dc2fc1fcf05a1bb70885db7b))
+
 ## [1.0.20](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.19...v1.0.20) (2025-12-11)
 
 
