@@ -48,9 +48,11 @@ export class Table<
     }
   }
 
-  async init<const S extends readonly { key: keyof TableType }[]> (
-    Schema: ValidateSchema<TableType, S>,
-    SchemaDefine: Partial<Record<keyof TableType, any>> = {}
+  async init<
+    SchemDefine extends Partial<Record<keyof TableType, any>> = {},
+    const S extends readonly { key: keyof TableType }[] = readonly { key: keyof TableType }[]
+  > (
+    Schema: ValidateSchema<TableType, S>, SchemaDefine: SchemDefine = {} as SchemDefine
   ) {
     this.modelSchema = Schema as any
     this.modelSchemaDefine = SchemaDefine
@@ -62,8 +64,12 @@ export class Table<
     return this.#cache<TableType>()
   }
 
-  async addSchem<newTableType extends ExtraTableType, const S extends readonly { key: keyof newTableType }[]> (
-    newSchema: ValidateSchema<newTableType, S>, SchemaDefine: Partial<Record<keyof newTableType, any>> = {}
+  async addSchem<
+    newTableType extends ExtraTableType,
+    newSchemDefine extends Partial<Record<keyof newTableType, any>> = {},
+    const S extends readonly { key: keyof newTableType }[] = readonly { key: keyof newTableType }[]
+  > (
+    newSchema: ValidateSchema<newTableType, S>, SchemaDefine: newSchemDefine = {} as newSchemDefine
   ) {
     this.modelSchema.push(...newSchema as any)
     this.modelSchemaDefine = Object.assign(this.modelSchemaDefine, SchemaDefine)
