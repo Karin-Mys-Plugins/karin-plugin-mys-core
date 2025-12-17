@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.25](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.24...v1.0.25) (2025-12-17)
+
+
+### Bug Fixes
+
+* pr使用配置文件 ([070b809](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/070b8095a5c4788f67d1d1a4d9fcf13a313007c0))
+* pr配置文件 ([f35411e](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/f35411e142e834c270fce69028becf0c12f0f518))
+* 删除pr配置文件 ([1c2d2e5](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/1c2d2e57fdad6319cf06f4038325b23b909e9691))
+
 ## [1.0.24](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.23...v1.0.24) (2025-12-17)
 
 
