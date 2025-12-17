@@ -29,7 +29,12 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
     this.initBase(DataDir, modelName, modelSchema, modelSchemaDefine, type, primaryKey)
 
     if (this.databaseType === DatabaseType.Db) {
-      this.model = sequelize.define(this.modelName, this.modelSchema, {
+      const modelSchema = this.modelSchema.reduce((acc, cur) => {
+        acc[cur.key] = cur.Option
+        return acc
+      }, {} as Record<keyof T, ModelAttributeColumnOptions<Model>>)
+
+      this.model = sequelize.define(this.modelName, modelSchema, {
         timestamps: false, freezeTableName: true
       })
       await this.model.sync()
