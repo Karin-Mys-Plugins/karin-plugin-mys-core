@@ -80,7 +80,7 @@ jobs:
         uses: thollander/actions-comment-pull-request@v3
         with:
           message: |
-            ## � 预览包发布成功
+            ## 🚀 预览包发布成功
 
             ### 🏷️ 包信息
             - **版本:** `${{ env.PREVIEW_VERSION }}`
@@ -90,8 +90,6 @@ jobs:
             ```bash
             ${{ steps.pkg-pr-new.outputs.pnpm_install_cmd }}
             ```
-
-            > 💡 每次更新 PR 后，重新运行安装命令即可获取最新版本
           comment-tag: published-packages
           mode: upsert
           reactions: rocket
