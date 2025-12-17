@@ -44,6 +44,8 @@ jobs:
           $previewVersion = "$currentVersion-pr.$prNumber.$shortSha"
           # 更新 package.json 中的版本号
           npm version $previewVersion --no-git-tag-version
+          # 输出版本号供后续步骤使用
+          echo "PREVIEW_VERSION=$previewVersion" >> $env:GITHUB_ENV
         shell: pwsh
 
       # 编译
@@ -52,6 +54,62 @@ jobs:
 
       # 使用 pkg.pr.new 发布预览版本
       - name: Publish to pkg.pr.new
-        run: npx pkg-pr-new publish --compact --comment=update --template=compact
+        id: pkg-pr-new
+        run: npx pkg-pr-new publish --compact --json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 在 PR 中评论预览版本信息
+      - name: Comment preview info
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const previewVersion = process.env.PREVIEW_VERSION;
+            const packageName = 'karin-plugin-mys-core';
+
+            const body = `## 🚀 预览版本已发布
+
+            **版本号**: \`${previewVersion}\`
+
+            ### 📦 安装方式
+
+            \`\`\`bash
+            # 使用 pnpm
+            pnpm add https://pkg.pr.new/${packageName}@${{ github.event.pull_request.number }} -w
+            \`\`\`
+
+            > 💡 每次更新 PR 后，重新运行安装命令即可获取最新版本
+
+            ---
+            _提交 SHA: \`${{ github.event.pull_request.head.sha }}\`_`;
+
+            // 查找是否已有预览版本评论
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🚀 预览版本已发布')
+            );
+
+            if (botComment) {
+              // 更新已有评论
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              // 创建新评论
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
