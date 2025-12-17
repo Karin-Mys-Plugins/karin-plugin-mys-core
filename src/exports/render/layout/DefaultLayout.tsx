@@ -28,7 +28,7 @@ export const DefaultLayoutComponent: React.FC<DefaultLayoutProps> = ({
     >
       {children}
 
-      <div className='absolute bottom-0 left-0 flex w-full items-center justify-center gap-3 py-2.5 text-sm bg-black/20'>
+      <div className='absolute bottom-0 left-0 flex w-full items-center justify-center gap-3 pt-2 text-sm bg-black/20'>
         {mysPlugin && (
           <>
             <div className='flex items-center gap-2'>
