@@ -53,7 +53,8 @@
         },
         {
           "type": "deps",
-          "section": "📦 依赖更新"
+          "section": "📦 依赖更新",
+          "hidden": false
         },
         {
           "type": "build",
