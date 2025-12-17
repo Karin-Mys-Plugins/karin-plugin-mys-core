@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.24](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.23...v1.0.24) (2025-12-17)
+
+
+### Bug Fixes
+
+* 截图默认png ([1245a2f](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/1245a2f74a0b8ef99f5659d69a2c1ee21eda75f8))
+* 更新评论 ([442c504](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/442c50401dc294edeee789524aaaa536343d34c8))
+* 版本号 ([801d599](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/801d599235288a3843a93d13b701fb800013e10d))
+* 表定义错误 ([9420a85](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/9420a853b52e359b5a9a5d8e937a9955808e2657))
+* 预览 ([58f565d](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/58f565d0eababf62b0934f47c65260a24b83e01b))
+
 ## [1.0.23](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.22...v1.0.23) (2025-12-16)
 
 
