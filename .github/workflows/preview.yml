@@ -31,6 +31,21 @@ jobs:
       - name: Install dependencies
         run: npm install --frozen-lockfile
 
+      # 修改版本号为预览版本
+      - name: Update version for preview
+        run: |
+          # 获取当前版本号
+          $currentVersion = (Get-Content package.json | ConvertFrom-Json).version
+          # 获取 PR 编号
+          $prNumber = "${{ github.event.pull_request.number }}"
+          # 获取提交的短 SHA
+          $shortSha = "${{ github.event.pull_request.head.sha }}".Substring(0, 7)
+          # 生成预览版本号: 1.0.23-pr.123.abc1234
+          $previewVersion = "$currentVersion-pr.$prNumber.$shortSha"
+          # 更新 package.json 中的版本号
+          npm version $previewVersion --no-git-tag-version
+        shell: pwsh
+
       # 编译
       - name: Build
         run: npm run build
