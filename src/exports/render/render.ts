@@ -51,7 +51,7 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
 
   async template<C extends React.ComponentType<any>> (
     template: K, component: C, props: React.ComponentProps<C>,
-    options: { type?: 'png' | 'jpeg' | 'webp', plugin?: Record<string, any>, render?: Omit<Options, 'file' | 'data'> } = {}
+    options: { type?: 'png' | 'jpeg' | 'webp', render?: Omit<Options, 'file' | 'data' | 'type' | 'omitBackground'> } = {}
   ) {
     const element = React.createElement(component, props)
 
@@ -86,8 +86,8 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
     fs.writeFileSync(savePath, Html, 'utf-8')
 
     const image = await karin.render({
-      type: options.type || 'jpeg',
-      omitBackground: options.type === 'png',
+      type: options.type || 'png',
+      omitBackground: options.type !== 'png',
       selector: 'container',
       setViewport: {
         deviceScaleFactor: 3
