@@ -19,7 +19,8 @@ type PathValue<T, P> = P extends keyof T
   ? T[P]
   : P extends `${infer K}.${infer Rest}` ? K extends keyof T ? PathValue<T[K], Rest> : {
     [Key in keyof T]: ToString<Key> extends K ? PathValue<T[Key], Rest> : never
-  }[keyof T] : never
+    // @ts-ignore - 处理keyof T包含enum的情况
+  }[keyof T] : T[P]
 
 export class Config<C extends { [key: string]: any }> {
   #cfgName: `${string}:${string}`
