@@ -219,7 +219,7 @@ export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassSta
   )
 
   ArrayColumn = <T, K extends string> (
-    key: K, fn?: (data: DatabaseArray<T>) => T[]
+    key: K, split: boolean, fn?: (data: DatabaseArray<T>) => T[]
   ): ColumnOption<ColumnOptionType.Array, K> => (
     {
       key,
@@ -228,8 +228,18 @@ export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassSta
         type: DataTypes.STRING,
         defaultValue: [].join(','),
         get (): DatabaseArray<T> {
-          const data = this.getDataValue(key).split(',').filter(Boolean)
-          return new DatabaseArray<T>(data)
+          let data = this.getDataValue(key)
+          if (split) {
+            return new DatabaseArray<T>(data.split(',').filter(Boolean))
+          } else {
+            try {
+              data = JSON.parse(data) || []
+            } catch (e) {
+              data = []
+            }
+
+            return new DatabaseArray<T>(data)
+          }
         },
         set (data: DatabaseArray<T>) {
           const setData = (fn ? fn(data) : data) || []

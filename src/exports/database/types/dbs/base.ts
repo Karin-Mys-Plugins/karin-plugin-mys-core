@@ -143,7 +143,7 @@ export interface DatabaseClassStatic {
   ): ColumnOption<ColumnOptionType.Normal, K>
 
   ArrayColumn<T, K extends string> (
-    key: K, fn?: (data: DatabaseArray<T>) => T[]
+    key: K, split: boolean, fn?: (data: DatabaseArray<T>) => T[]
   ): ColumnOption<ColumnOptionType.Array, K>
 
   JsonColumn<T extends Record<string, any>, K extends string> (
