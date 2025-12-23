@@ -1,6 +1,5 @@
 import { dir } from '@/dir'
-import { common } from '@/exports/utils'
-import { Database } from '../database'
+import { common, DefineDataPropEnum } from '@/exports/utils'
 import { createTable } from '../dbs'
 import { DatabaseType, MysDeviceInfoTableType } from '../types'
 
@@ -9,16 +8,20 @@ export const MysDeviceInfoTable = createTable<MysDeviceInfoTableType>(
 )
 
 export const MysDeviceInfoDB = await MysDeviceInfoTable.init(
-  [
-    Database.PkColumn('md5', 'STRING'),
-    Database.Column('deviceId', 'STRING', common.getDeviceGuid),
-    Database.Column('deviceFp', 'STRING', ''),
-    Database.Column('name', 'STRING', ''),
-    Database.Column('board', 'STRING', ''),
-    Database.Column('model', 'STRING', ''),
-    Database.Column('oaid', 'STRING', ''),
-    Database.Column('version', 'INTEGER', 12),
-    Database.Column('fingerprint', 'STRING', ''),
-    Database.Column('product', 'STRING', ''),
-  ]
+  {
+    prop: DefineDataPropEnum.Object,
+    default: {
+      md5: common.DefineValve(''),
+      deviceId: common.DefineValve(common.getDeviceGuid),
+      deviceFp: common.DefineValve(''),
+      name: common.DefineValve(''),
+      board: common.DefineValve(''),
+      model: common.DefineValve(''),
+      oaid: common.DefineValve(''),
+      version: common.DefineValve(12),
+      fingerprint: common.DefineValve(''),
+      product: common.DefineValve(''),
+    },
+    required: ['md5']
+  }
 )

@@ -73,8 +73,8 @@ export const Database = new class DatabaseClass {
     return this.Db.Static.ArrayColumn
   }
 
-  get JsonColumn (): DatabaseClassStatic['JsonColumn'] {
-    return this.Db.Static.JsonColumn
+  get ObjectColumn (): DatabaseClassStatic['ObjectColumn'] {
+    return this.Db.Static.ObjectColumn
   }
 }()
 

@@ -1,10 +1,11 @@
-import { common } from '@/exports/utils'
+import { common, DefineDataPropEnum, DefineDataTypeArray, DefineDataTypeOArray, DefineDataTypeObject, DefineDataTypeValue, IsUniformRecord } from '@/exports/utils'
 import { existToMkdirSync, json, logger, rmSync } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import fs from 'node:fs'
 import path from 'node:path'
-import { Model, ModelStatic } from 'sequelize'
-import { ColumnOptionType, DatabaseReturn, DatabaseType, ModelAttributes } from '../types'
+import { DataTypes, Model, ModelStatic } from 'sequelize'
+import { Database } from '../database'
+import { DatabaseReturn, DatabaseType, ModelAttributes } from '../types'
 
 export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   primaryKey: keyof T | undefined
@@ -15,37 +16,56 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   declare databaseType: D
 
   declare modelName: string
-  declare modelSchema: ModelAttributes<Model, T>
-  declare modelSchemaDefine: Partial<Record<keyof T, any>>
+  declare modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>
 
-  initBase (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model, T>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T) {
+  initBase (DataDir: string, modelName: string, modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>, type: D, primaryKey?: keyof T) {
     this.primaryKey = primaryKey
 
     this.databaseType = type
     this.databasePath = path.join(DataDir, modelName)
-    if (type !== DatabaseType.Db) {
-      existToMkdirSync(this.databasePath)
-    }
+
+    type !== DatabaseType.Db && existToMkdirSync(this.databasePath)
 
     this.modelName = modelName
-    this.modelSchema = modelSchema
     this.modelSchemaDefine = modelSchemaDefine
   }
 
-  schemaToJSON (pk: string): T {
-    const primaryKey = this.model?.primaryKeyAttribute || this.primaryKey!
+  getModelSchemaOptions (): ModelAttributes<Model, T> {
+    const modelSchemaOptions: ModelAttributes<Model, T> = []
 
-    const result: Record<string, any> = {
-      [primaryKey]: pk
-    }
-    this.modelSchema.forEach(({ key, type, Option }) => {
-      if (key !== primaryKey) {
-        const Value = typeof Option.defaultValue === 'function' ? Option.defaultValue() : Option.defaultValue
-        result[key as string] = type === ColumnOptionType.Json ? JSON.parse(Value) : ColumnOptionType.Array ? Value.split(',') : Value
+    lodash.forEach(this.modelSchemaDefine.default, (define, key) => {
+      switch (define.prop) {
+        case DefineDataPropEnum.Value: {
+          const value = define as DefineDataTypeValue<T[string & keyof T]>
+
+          const type: keyof typeof DataTypes = value.type === 'text' ? 'TEXT' : value.type === 'number' ? 'INTEGER' : value.type === 'boolean' ? 'BOOLEAN' : 'STRING'
+
+          if (this.modelSchemaDefine.required!.includes(key)) {
+            modelSchemaOptions.push(Database.PkColumn(key, type))
+          } else {
+            modelSchemaOptions.push(Database.Column(key, type, value.default))
+          }
+          break
+        }
+        case DefineDataPropEnum.Array: {
+          const Array = define as DefineDataTypeArray<T[string & keyof T]>
+          modelSchemaOptions.push(Database.ArrayColumn(key, define.prop === DefineDataPropEnum.Value, Array.default))
+          break
+        }
+        case DefineDataPropEnum.Object:
+        case DefineDataPropEnum.OArray: {
+          const Object = define as IsUniformRecord<T[string & keyof T]> extends true ? DefineDataTypeOArray<T[string & keyof T]> : DefineDataTypeObject<T[string & keyof T]>
+          modelSchemaOptions.push(Database.ObjectColumn(key, Object.default))
+          break
+        }
       }
     })
 
-    return result as T
+    return modelSchemaOptions
+  }
+
+  SchemaDefault (pk: string): T {
+    return common.filterData({ [this.primaryKey!]: pk } as T, this.modelSchemaDefine)
   }
 
   userPath (pk: string) {
@@ -89,9 +109,9 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   writeDirSync (pk: string, data: Record<string, any>) {
     const path = this.userPath(pk)
 
-    this.modelSchema.forEach(({ key, type, Option }) => {
+    lodash.forEach(this.modelSchemaDefine, (define, key) => {
       if (key !== this.primaryKey!) {
-        const mergeData = common.filterData(data[key as string], Option.defaultValue, this.modelSchemaDefine[key])
+        const mergeData = common.filterData(data[key], define as any)
 
         json.writeSync(`${path}/${key as string}.json`, {
           key,
@@ -108,9 +128,8 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     return async (data: Partial<T>) => {
       const userPath = this.userPath(pk)
 
-      const mergeData = common.filterData(data, this.schemaToJSON(pk), this.modelSchemaDefine)
-
-      delete data[this.primaryKey!]
+      const mergeData = common.filterData(data, this.modelSchemaDefine)
+      delete mergeData[this.primaryKey!]
 
       json.writeSync(userPath, mergeData)
 
@@ -146,19 +165,10 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
   saveSql (model: Model<any, any>, pk: string): (data: Partial<T>) => Promise<DatabaseReturn<T>[DatabaseType.Db]> {
     return async (data: Partial<T>) => {
-      delete data[this.model!.primaryKeyAttribute]
-
-      const defData = this.schemaToJSON(pk)
-
-      const mergeData: Partial<T> = {}
-      lodash.forEach(data, (value, key: keyof T) => {
-        if (value !== undefined && value !== null) {
-          mergeData[key] = common.filterData(value, defData[key], this.modelSchemaDefine[key])
-        }
-      })
+      const mergeData: Partial<T> = common.filterData(data, this.modelSchemaDefine)
+      delete mergeData[this.model!.primaryKeyAttribute]
 
       const result = await model.update(mergeData)
-
       return {
         ...result.toJSON<T>(),
         save: this.saveSql(result, pk),

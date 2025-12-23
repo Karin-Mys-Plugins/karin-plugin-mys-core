@@ -1,5 +1,5 @@
 import { dir } from '@/dir'
-import { Database } from '../database'
+import { common, DefineDataPropEnum } from '@/exports/utils'
 import { createTable } from '../dbs'
 import { DatabaseType, MysAccountInfoTableType, MysAccountType } from '../types'
 
@@ -8,11 +8,15 @@ export const MysAccountInfoTable = createTable<MysAccountInfoTableType>(
 )
 
 export const MysAccountInfoDB = await MysAccountInfoTable.init(
-  [
-    Database.PkColumn('ltuid', 'STRING'),
-    Database.Column('type', 'STRING', MysAccountType.cn),
-    Database.Column('cookie', 'TEXT', ''),
-    Database.Column('stoken', 'STRING', ''),
-    Database.Column('deviceMd5', 'STRING', '')
-  ]
+  {
+    prop: DefineDataPropEnum.Object,
+    default: {
+      ltuid: common.DefineValve(''),
+      type: common.DefineValve(MysAccountType.cn),
+      cookie: common.DefineValve('', true),
+      stoken: common.DefineValve(''),
+      deviceMd5: common.DefineValve(''),
+    },
+    required: ['ltuid']
+  }
 )

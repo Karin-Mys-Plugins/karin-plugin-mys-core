@@ -14,7 +14,7 @@
   },
   "scripts": {
     "app": "node lib/app.js",
-    "build": "npm run build:css && tsup",
+    "build": "npm run build:css && tsdown",
     "build:css": "tailwindcss -i src/template/tailwind.css -o resources/styles/karin-plugin-mys-core.css",
     "dev": "cross-env EBV_FILE=\"development.env\" node --import tsx src/app.ts",
     "dev:css": "tailwindcss -i src/template/tailwind.css -o resources/styles/karin-plugin-mys-core.css --watch",
@@ -53,14 +53,12 @@
     }
   },
   "main": "lib/index.js",
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "md5": "^2.3.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "sequelize": "^6.37.7"
-  },
-  "devDependencies": {
     "@karinjs/plugin-puppeteer": "^1.1.2",
     "@types/express": "^5.0.1",
     "@types/lodash": "^4.17.16",
@@ -73,11 +71,14 @@
     "cross-env": "^7.0.3",
     "eslint": "^9.7.0",
     "neostandard": "^0.11.9",
-    "node-karin": "^1.13.0",
+    "node-karin": "^1.14.0",
     "tailwindcss": "^3.4.17",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.18.2",
     "tsx": "^4.19.2",
     "typescript": "^5.5.3"
+  },
+  "peerDependencies": {
+    "sequelize": "^6.37.7"
   },
   "karin": {
     "main": "src/index.ts",
@@ -106,6 +107,7 @@
     "!lib/app.js",
     "!lib/app.d.ts",
     "!lib/index.d.ts",
+    "!lib/web.config.d.ts",
     "!lib/apps/**/*.d.ts"
   ],
   "publishConfig": {

@@ -1,3 +1,4 @@
+import { DefineDataTypeOArray, DefineDataTypeObject, IsUniformRecord } from '@/exports/utils'
 import { logger } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import { DataTypes, Model, ModelAttributeColumnOptions, ModelStatic } from 'sequelize'
@@ -24,12 +25,6 @@ export type ModelAttributes<M extends Model = Model, TAttributes = any> = {
   type: ColumnOptionType
   Option: ModelAttributeColumnOptions<M>
 }[]
-
-type ExtractSchemaKeys<T extends readonly any[]> = T[number]['key']
-
-export type ValidateSchema<TAttributes, S extends readonly { key: any }[]> = keyof TAttributes extends ExtractSchemaKeys<S>
-  ? ExtractSchemaKeys<S> extends keyof TAttributes ? S : `❌ Schema 包含了多余的键：${Exclude<ExtractSchemaKeys<S>, keyof TAttributes>}`
-  : keyof TAttributes extends string ? `❌ Schema 缺少必需的键：${Exclude<keyof TAttributes, ExtractSchemaKeys<S>>}` : never
 
 export interface DatabaseReturn<T> {
   [DatabaseType.Db]: T & {
@@ -61,10 +56,7 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
   modelName: string
 
   /** @description 表定义 */
-  modelSchema: ModelAttributes<Model, T>
-
-  /** @description 表定义扩展 */
-  modelSchemaDefine: Partial<Record<keyof T, any>>
+  modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>
 
   /** @description 检查数据库是否可用 */
   check (): Promise<boolean>
@@ -77,10 +69,13 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
    * @param type 数据库类型
    */
 
-  init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model, T>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>>
+  init (DataDir: string, modelName: string, modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>>
 
-  /** @description 将表定义转换为 JSON 对象 */
-  schemaToJSON (pk: string): T
+  /** @description 将表定义转换 */
+  getModelSchemaOptions (): ModelAttributes<Model, T>
+
+  /** @description 获取表默认数据 */
+  SchemaDefault (pk: string): T
 
   /** @description 获取用户数据文件路径 */
   userPath (pk: string): string
@@ -143,10 +138,10 @@ export interface DatabaseClassStatic {
   ): ColumnOption<ColumnOptionType.Normal, K>
 
   ArrayColumn<T, K extends string> (
-    key: K, split: boolean, fn?: (data: DatabaseArray<T>) => T[]
+    key: K, split: boolean, def: T[]
   ): ColumnOption<ColumnOptionType.Array, K>
 
-  JsonColumn<T extends Record<string, any>, K extends string> (
+  ObjectColumn<T extends Record<string, any>, K extends string> (
     key: K, def: T
   ): ColumnOption<ColumnOptionType.Json, K>
 }

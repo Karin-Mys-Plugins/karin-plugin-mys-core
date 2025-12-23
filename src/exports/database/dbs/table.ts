@@ -1,6 +1,6 @@
-import { Model } from 'sequelize'
+import { DefineDataTypeOArray, DefineDataTypeObject, IsUniformRecord } from '@/exports/utils'
 import { Database } from '../database'
-import { DatabaseClassInstance, DatabaseType, Dialect, ModelAttributes, ValidateSchema } from '../types'
+import { DatabaseClassInstance, DatabaseType, Dialect } from '../types'
 
 export class Table<
   TableType extends Record<string, any>,
@@ -17,8 +17,8 @@ export class Table<
   #primaryKey: keyof TableType | undefined
 
   declare initCache: DatabaseClassInstance<TableType, DBType>
-  declare modelSchema: ModelAttributes<Model, TableType>
-  declare modelSchemaDefine: Partial<Record<keyof TableType, any>>
+
+  declare modelSchemaDefine: IsUniformRecord<TableType> extends true ? DefineDataTypeOArray<TableType> : DefineDataTypeObject<TableType>
 
   /**
    * @param type Db: 直接保存在sqlite数据中、 File: 保存在单个json文件中、 Dir: 保存在多个json文件的目录中、Schema中除pk外每一个键值对应一个文件 e.g tableName/user/key.json
@@ -41,41 +41,30 @@ export class Table<
         this.#dialect = Db.dialect
         this.#Database = Db
 
-        await this.init(this.modelSchema)
+        await this.init(this.modelSchemaDefine)
       }
 
       return this.initCache as unknown as DatabaseClassInstance<T, DBType>
     }
   }
 
-  async init<
-    SchemDefine extends Partial<Record<keyof TableType, any>> = {},
-    const S extends readonly { key: keyof TableType }[] = readonly { key: keyof TableType }[]
-  > (
-    Schema: ValidateSchema<TableType, S>, SchemaDefine: SchemDefine = {} as SchemDefine
+  async init (
+    SchemaDefine: IsUniformRecord<TableType> extends true ? DefineDataTypeOArray<TableType> : DefineDataTypeObject<TableType>
   ) {
-    this.modelSchema = Schema as any
     this.modelSchemaDefine = SchemaDefine
 
     this.initCache = await this.#Database.init(
-      this.#DataDir, this.#tableName, this.modelSchema, this.modelSchemaDefine, this.#type, this.#primaryKey
+      this.#DataDir, this.#tableName, this.modelSchemaDefine, this.#type, this.#primaryKey
     )
 
     return this.#cache<TableType>()
   }
 
-  async addSchem<
-    newTableType extends ExtraTableType,
-    newSchemDefine extends Partial<Record<keyof newTableType, any>> = {},
-    const S extends readonly { key: keyof newTableType }[] = readonly { key: keyof newTableType }[]
-  > (
-    newSchema: ValidateSchema<newTableType, S>, SchemaDefine: newSchemDefine = {} as newSchemDefine
-  ) {
-    this.modelSchema.push(...newSchema as any)
+  async addSchem<newTableType extends ExtraTableType, newSchemDefine extends Partial<Record<keyof newTableType, any>> = {}> (SchemaDefine: newSchemDefine) {
     this.modelSchemaDefine = Object.assign(this.modelSchemaDefine, SchemaDefine)
 
     this.initCache = await this.#Database.init(
-      this.#DataDir, this.#tableName, this.modelSchema, this.modelSchemaDefine, this.#type
+      this.#DataDir, this.#tableName, this.modelSchemaDefine, this.#type
     )
 
     return this.#cache<TableType & newTableType>()

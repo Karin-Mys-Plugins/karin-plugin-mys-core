@@ -1,5 +1,5 @@
 import lodash from 'node-karin/lodash'
-import { DefineDataArray } from './types'
+import { DefineDataPropEnum, DefineDataTypeArray, DefineDataTypeOArray, DefineDataTypeObject, DefineDataTypeValue } from './types'
 
 /**
  * @description 生成随机字符串
@@ -57,53 +57,104 @@ export const ObjToStr = (obj: Record<string, string | number>, sep: string) => {
   return Object.entries(obj).filter(([k, v]) => v).map(([k, v]) => `${k}=${v}`).join(sep) + sep
 }
 
-export function filterData (user: any, defaults: any, Define: any) {
-  if (Array.isArray(user) && Array.isArray(defaults)) {
-    const DefineArray = Define as DefineDataArray<any> | undefined
-    if (DefineArray?.defaultConfigItem) {
-      const filtered: any[] = []
-      const required = DefineArray.defaultConfigItem.required as string[] | undefined
+export function DefineValve<T extends string> (value: T | (() => T), long?: boolean): DefineDataTypeValue<T>
+export function DefineValve<T extends number | boolean> (value: T | (() => T), long?: never): DefineDataTypeValue<T>
+export function DefineValve<T extends string | number | boolean> (value: T | (() => T), long?: boolean): DefineDataTypeValue<T> {
+  return {
+    prop: DefineDataPropEnum.Value,
+    type: (long ? 'text' : typeof value) as DefineDataTypeValue<T>['type'],
+    default: value
+  }
+}
 
-      user.forEach((value, key) => {
-        // 如果定义了 required，检查元素是否包含所有必需的键
-        if (required && lodash.isPlainObject(value)) {
+export function filterData (data: any, define: DefineDataTypeObject<any> | DefineDataTypeArray<any> | DefineDataTypeOArray<any> | DefineDataTypeValue<any>, defaultValue?: any): any {
+  switch (define.prop) {
+    case DefineDataPropEnum.Array: {
+      if (!Array.isArray(data)) return defaultValue || define.default
+
+      const filtered: typeof define.default = []
+
+      data.forEach((value: any) => {
+        const filterValue = filterData(value, define.defaultItem)
+
+        if (define.defaultItem.prop === DefineDataPropEnum.Object) {
+          if (!lodash.isPlainObject(value)) return
+
           const _value = value as Record<string, any>
-          const hasAllRequired = required.every(requiredKey => requiredKey in _value && _value[requiredKey] !== undefined && _value[requiredKey] !== null && _value[requiredKey] !== '')
-
-          if (!hasAllRequired) return
+          if (define.required && !define.required.every(k => _value[k] !== undefined && _value[k] !== null && _value[k] !== '' && !isNaN(filterValue))) return
         }
 
-        filtered[key] = filterData(value, DefineArray.defaultConfigItem.defaultConfig, DefineArray.defaultConfigItem.defaultConfig)
+        filterValue !== undefined && filterValue !== null && filterValue !== '' && !isNaN(filterValue) && filtered.push(filterValue)
       })
 
       return filtered
     }
+    case DefineDataPropEnum.Object: {
+      if (!lodash.isPlainObject(data)) return defaultValue || define.default
 
-    return user
-  } else if (lodash.isPlainObject(user) && lodash.isPlainObject(defaults)) {
-    const filtered: Record<string, any> = {}
+      const filtered: typeof define.default = {}
 
-    const _user = user as Record<string, any>
-    const _defaults = defaults as Record<string, any>
+      lodash.forEach(define.default, (value, key) => {
+        const filterValue = filterData(data[key], value)
 
-    const mergedValue = lodash.merge({}, _defaults, _user)
+        if (define.required && !define.required.every(k => data[k] !== undefined && data[k] !== null && data[k] !== '' && !isNaN(filterValue))) {
+          throw new Error(`keys ${define.required.join(', ')} undefined or has invalid value!`)
+        }
 
-    const _Define = Define as any
-    if (Define?.defaultConfig) {
-      lodash.forEach(_user, (value, key) => {
-        // 合并用户配置和默认配置，确保动态键也包含完整字段
-        const mergedValue = lodash.merge(Array.isArray(value) ? [] : {}, Define.defaultConfig, value)
-
-        filtered[key] = filterData(mergedValue, Define.defaultConfig, Array.isArray(value) ? _Define : _Define[key])
+        filtered[key] = filterValue
       })
+
+      return filtered
     }
+    case DefineDataPropEnum.OArray: {
+      if (!lodash.isPlainObject(data)) return defaultValue || define.default
 
-    lodash.forEach(_defaults, (value, key) => {
-      filtered[key] = filterData(mergedValue[key], value, _Define?.[key])
-    })
+      const filtered: typeof define.default = {}
 
-    return filtered
+      lodash.forEach(data, (value, key) => {
+        const filterValue = filterData(value, define.defaultItem)
+
+        if (define.defaultItem.prop === DefineDataPropEnum.Object) {
+          if (!lodash.isPlainObject(value)) return
+
+          const _value = value as Record<string, any>
+          if (define.required && !define.required.every(k => _value[k] !== undefined && _value[k] !== null && _value[k] !== '' && !isNaN(filterValue))) return
+        }
+
+        if (define.defaultItem.prop === DefineDataPropEnum.Array && !Array.isArray(value)) return
+
+        filterValue !== undefined && filterValue !== null && filterValue !== '' && !isNaN(filterValue) && (filtered[key] = filterValue)
+      })
+
+      return filtered
+    }
+    case DefineDataPropEnum.Value: {
+      if (data === undefined || data === null) return defaultValue ?? define.default
+
+      switch (define.type) {
+        case 'text':
+        case 'string':
+          switch (typeof data) {
+            case 'string':
+              return data
+            case 'number':
+              return data + ''
+          }
+          return defaultValue ?? (typeof define.default === 'function' ? define.default() : define.default)
+        case 'number': {
+          switch (typeof data) {
+            case 'number':
+              return data
+            case 'string': {
+              const num = +data
+              return isNaN(num) ? (defaultValue ?? (typeof define.default === 'function' ? define.default() : define.default)) : num
+            }
+          }
+          return defaultValue ?? (typeof define.default === 'function' ? define.default() : define.default)
+        }
+        case 'boolean':
+          return !!data
+      }
+    }
   }
-
-  return user
 }

@@ -6,7 +6,3 @@ export interface DefaultCoreConfigType {
     [MysAccountType.os]: string
   }
 }
-
-export interface DefaultCoreConfigDefineType {
-
-}

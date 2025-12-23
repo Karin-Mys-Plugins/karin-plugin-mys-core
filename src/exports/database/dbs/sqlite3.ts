@@ -1,9 +1,10 @@
 import { dir } from '@/dir'
+import { DefineDataTypeOArray, DefineDataTypeObject, IsUniformRecord } from '@/exports/utils'
 import { existsSync, json, logger, mkdirSync, rmSync } from 'node-karin'
 import fs from 'node:fs'
 import path from 'node:path'
 import { DataTypes, Model, ModelAttributeColumnOptions, Op, Sequelize } from 'sequelize'
-import { ColumnOption, ColumnOptionType, DatabaseArray, DatabaseClassInstance, DatabaseClassStatic, DatabaseReturn, DatabaseType, Dialect, ModelAttributes } from '../types'
+import { ColumnOption, ColumnOptionType, DatabaseArray, DatabaseClassInstance, DatabaseClassStatic, DatabaseReturn, DatabaseType, Dialect } from '../types'
 import { DbBase } from './base'
 
 const dialect = Dialect.Sqlite
@@ -25,11 +26,13 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
     }
   }
 
-  async init (DataDir: string, modelName: string, modelSchema: ModelAttributes<Model, T>, modelSchemaDefine: Partial<Record<keyof T, any>>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>> {
-    this.initBase(DataDir, modelName, modelSchema, modelSchemaDefine, type, primaryKey)
+  async init (DataDir: string, modelName: string, modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>> {
+    this.initBase(DataDir, modelName, modelSchemaDefine, type, primaryKey)
 
     if (this.databaseType === DatabaseType.Db) {
-      const modelSchema = this.modelSchema.reduce((acc, cur) => {
+      const modelSchemaOptions = this.getModelSchemaOptions()
+
+      const modelSchema = modelSchemaOptions.reduce((acc, cur) => {
         acc[cur.key] = cur.Option
         return acc
       }, {} as Record<keyof T, ModelAttributeColumnOptions<Model>>)
@@ -42,7 +45,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
       const queryInterface = sequelize.getQueryInterface()
       const tableDescription = await queryInterface.describeTable(this.modelName)
 
-      for (const Schema of this.modelSchema) {
+      for (const Schema of modelSchemaOptions) {
         const { key, Option } = Schema
         const _key = key as string
 
@@ -68,7 +71,8 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
       const path = this.userPath(pk)
       if (!existsSync(path)) {
         if (create) {
-          const data = this.schemaToJSON(pk)
+          const data = this.SchemaDefault(pk)
+
           if (this.databaseType === DatabaseType.Dir) {
             mkdirSync(path)
             this.writeDirSync(pk, data)
@@ -100,7 +104,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
     } else {
       let result = await this.model!.findByPk(pk)
       if (!result && create) {
-        result = await this.model!.create(this.schemaToJSON(pk))
+        result = await this.model!.create(this.SchemaDefault(pk))
       }
       if (!result) return undefined
 
@@ -219,14 +223,14 @@ export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassSta
   )
 
   ArrayColumn = <T, K extends string> (
-    key: K, split: boolean, fn?: (data: DatabaseArray<T>) => T[]
+    key: K, split: boolean, def: T[] = []
   ): ColumnOption<ColumnOptionType.Array, K> => (
     {
       key,
       type: ColumnOptionType.Array,
       Option: {
         type: DataTypes.STRING,
-        defaultValue: [].join(','),
+        defaultValue: def.join(','),
         get (): DatabaseArray<T> {
           let data = this.getDataValue(key)
           if (split) {
@@ -242,15 +246,14 @@ export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassSta
           }
         },
         set (data: DatabaseArray<T>) {
-          const setData = (fn ? fn(data) : data) || []
-          this.setDataValue(key, setData.join(','))
+          this.setDataValue(key, (data || []).join(','))
         }
       }
     }
   )
 
-  JsonColumn = <T, K extends string> (
-    key: K, def: T
+  ObjectColumn = <T, K extends string> (
+    key: K, def: T = {} as T
   ): ColumnOption<ColumnOptionType.Json, K> => (
     {
       key,

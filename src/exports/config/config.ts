@@ -1,4 +1,4 @@
-import { common } from '@/exports/utils'
+import { common, DefineDataTypeOArray, DefineDataTypeObject, IsUniformRecord } from '@/exports/utils'
 import { existsSync, existToMkdirSync, logger, requireFileSync, watch, writeJsonSync } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import path from 'node:path'
@@ -32,7 +32,7 @@ export class Config<C extends { [key: string]: any }> {
    * @description 默认配置
    */
   #DefaultConfig: C
-  #DefineConfig: { [key: string]: any }
+  #DefineConfig: IsUniformRecord<C> extends true ? DefineDataTypeOArray<C> : DefineDataTypeObject<C>
   /**
    * @description 配置保存路径
    */
@@ -41,7 +41,7 @@ export class Config<C extends { [key: string]: any }> {
   /**
    * @param name 插件名称:配置名称
    */
-  constructor (name: `${string}:${string}`, ConfigDir: string, DefaultConfig: C, DefineConfig: { [key: string]: any }) {
+  constructor (name: `${string}:${string}`, ConfigDir: string, DefineConfig: IsUniformRecord<C> extends true ? DefineDataTypeOArray<C> : DefineDataTypeObject<C>) {
     this.#cfgName = name
 
     const splitName = name.split(':')
@@ -51,12 +51,12 @@ export class Config<C extends { [key: string]: any }> {
 
     this.#ConfigPath = path.join(ConfigDir, `${splitName[1]}.json`)
 
-    this.#DefaultConfig = DefaultConfig
+    this.#DefaultConfig = common.filterData({}, DefineConfig)
     this.#DefineConfig = DefineConfig
 
     existToMkdirSync(ConfigDir)
 
-    !existsSync(this.#ConfigPath) && writeJsonSync(this.#ConfigPath, DefaultConfig, true)
+    !existsSync(this.#ConfigPath) && writeJsonSync(this.#ConfigPath, this.#DefaultConfig, true)
 
     this.loadConfig()
   }
@@ -73,9 +73,9 @@ export class Config<C extends { [key: string]: any }> {
     return mergedConfig
   }
 
-  mergeWithDefaults (userConfig: C, defaultConfig: C, DefineConfig: Record<string, any>): C {
+  mergeWithDefaults (userConfig: C, defaultConfig: C, DefineConfig: IsUniformRecord<C> extends true ? DefineDataTypeOArray<C> : DefineDataTypeObject<C>): C {
     // 先过滤用户配置，只保留默认配置中定义的字段
-    const filteredUserConfig = common.filterData(userConfig, defaultConfig, DefineConfig)
+    const filteredUserConfig = common.filterData(userConfig, DefineConfig)
 
     // 然后合并配置
     const result = lodash.merge({}, defaultConfig, filteredUserConfig)

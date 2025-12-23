@@ -1,5 +1,5 @@
 import { dir } from '@/dir'
-import { Database } from '../database'
+import { common, DefineDataPropEnum } from '@/exports/utils'
 import { createTable } from '../dbs'
 import { BaseGameUIDInfoTableType, BaseUserInfoTableType, DatabaseType } from '../types'
 
@@ -8,10 +8,26 @@ export const MysUserInfoTable = createTable<BaseUserInfoTableType, BaseGameUIDIn
 )
 
 export const MysUserInfoDB = await MysUserInfoTable.init(
-  [
-    Database.PkColumn('userId', 'STRING'),
-    Database.ArrayColumn('ltuids', true),
-    Database.ArrayColumn('stuids', true),
-    Database.ArrayColumn('deviceList', true)
-  ]
+  {
+    prop: DefineDataPropEnum.Object,
+    default: {
+      userId: common.DefineValve(''),
+      ltuids: {
+        prop: DefineDataPropEnum.Array,
+        default: [],
+        defaultItem: common.DefineValve('')
+      },
+      stuids: {
+        prop: DefineDataPropEnum.Array,
+        default: [],
+        defaultItem: common.DefineValve('')
+      },
+      deviceList: {
+        prop: DefineDataPropEnum.Array,
+        default: [],
+        defaultItem: common.DefineValve('')
+      }
+    },
+    required: ['userId']
+  }
 )
