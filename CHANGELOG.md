@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.27](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.26...v1.0.27) (2025-12-21)
+
+
+### Bug Fixes
+
+* 完善数据库表定义 ([8df1cef](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/8df1cef1251a30f332e0aa4b6c3fae1dcb3c80e7))
+
 ## [1.0.26](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.25...v1.0.26) (2025-12-18)
 
 
