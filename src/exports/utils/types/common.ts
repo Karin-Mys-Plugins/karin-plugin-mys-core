@@ -27,7 +27,7 @@ export interface DefineDataTypeOArray<V extends string | number | boolean | Reco
 
 // 辅助类型:检查是否所有值都是同一类型
 export type IsUniformRecord<T> = [keyof T] extends [string | number]
-  ? T extends Record<keyof T, infer U> ? Record<keyof T, U> extends T ? true : false : false
+  ? T extends Record<keyof T, infer U> ? { [K in keyof T]: T[K] } extends Record<keyof T, U> ? true : false : false
   : false
 
 export interface DefineDataTypeObject<V extends Record<string, any>> {
