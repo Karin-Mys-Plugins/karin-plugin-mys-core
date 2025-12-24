@@ -1,4 +1,4 @@
-import { DefineDataTypeOArray, DefineDataTypeObject, IsUniformRecord } from '@/exports/utils'
+import { DefineDataTypeObject } from '@/exports/utils'
 import { Database } from '../database'
 import { DatabaseClassInstance, DatabaseType, Dialect } from '../types'
 
@@ -18,7 +18,7 @@ export class Table<
 
   declare initCache: DatabaseClassInstance<TableType, DBType>
 
-  declare modelSchemaDefine: IsUniformRecord<TableType> extends true ? DefineDataTypeOArray<TableType> : DefineDataTypeObject<TableType>
+  declare modelSchemaDefine: DefineDataTypeObject<TableType>
 
   /**
    * @param type Db: 直接保存在sqlite数据中、 File: 保存在单个json文件中、 Dir: 保存在多个json文件的目录中、Schema中除pk外每一个键值对应一个文件 e.g tableName/user/key.json
@@ -48,9 +48,7 @@ export class Table<
     }
   }
 
-  async init (
-    SchemaDefine: IsUniformRecord<TableType> extends true ? DefineDataTypeOArray<TableType> : DefineDataTypeObject<TableType>
-  ) {
+  async init (SchemaDefine: DefineDataTypeObject<TableType>) {
     this.modelSchemaDefine = SchemaDefine
 
     this.initCache = await this.#Database.init(
@@ -60,7 +58,7 @@ export class Table<
     return this.#cache<TableType>()
   }
 
-  async addSchem<newTableType extends ExtraTableType, newSchemDefine extends Partial<Record<keyof newTableType, any>> = {}> (SchemaDefine: newSchemDefine) {
+  async addSchem<newTableType extends ExtraTableType> (SchemaDefine: DefineDataTypeObject<newTableType>) {
     this.modelSchemaDefine = Object.assign(this.modelSchemaDefine, SchemaDefine)
 
     this.initCache = await this.#Database.init(

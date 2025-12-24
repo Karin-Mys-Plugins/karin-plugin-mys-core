@@ -1,5 +1,5 @@
 import { dir } from '@/dir'
-import { DefineDataTypeOArray, DefineDataTypeObject, IsUniformRecord } from '@/exports/utils'
+import { DefineDataTypeObject } from '@/exports/utils'
 import { existsSync, json, logger, mkdirSync, rmSync } from 'node-karin'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -26,7 +26,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
     }
   }
 
-  async init (DataDir: string, modelName: string, modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>> {
+  async init (DataDir: string, modelName: string, modelSchemaDefine: DefineDataTypeObject<T>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>> {
     this.initBase(DataDir, modelName, modelSchemaDefine, type, primaryKey)
 
     if (this.databaseType === DatabaseType.Db) {

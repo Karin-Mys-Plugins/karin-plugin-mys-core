@@ -85,6 +85,7 @@ jobs:
             ### 🏷️ 包信息
             - **版本:** `${{ env.PREVIEW_VERSION }}`
             - **提交:** [`${{ github.event.pull_request.head.sha }}`](https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }})
+            - **发布时间:** `${{ github.event.pull_request.updated_at }}`
 
             ### 📥 安装命令
             ```bash

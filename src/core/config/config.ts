@@ -1,18 +1,24 @@
 import { dir } from '@/dir'
 import { Config } from '@/exports/config'
 import { MysAccountType } from '@/exports/database'
-import { common, DefineDataPropEnum } from '@/exports/utils'
+import { DefineDataPropEnum } from '@/exports/utils'
 import { DefaultCoreConfigType } from '../types'
 
 export const CoreCfg = new Config<DefaultCoreConfigType>(`${dir.name}:config`, dir.ConfigDir, {
   prop: DefineDataPropEnum.Object,
   default: {
     proxy: {
-      prop: DefineDataPropEnum.Object,
+      prop: DefineDataPropEnum.OArray,
       default: {
-        github: common.DefineValve('https://gh-proxy.org'),
-        [MysAccountType.os]: common.DefineValve(''),
-      }
+        github: 'https://gh-proxy.org',
+        [MysAccountType.os]: '',
+      },
+      defaultItem: {
+        prop: DefineDataPropEnum.Value,
+        type: 'string',
+        default: ''
+      },
+      requiredDefault: ['github', MysAccountType.os]
     }
   }
 }).watch()

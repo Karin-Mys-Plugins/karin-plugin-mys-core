@@ -16,9 +16,9 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   declare databaseType: D
 
   declare modelName: string
-  declare modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>
+  declare modelSchemaDefine: DefineDataTypeObject<T>
 
-  initBase (DataDir: string, modelName: string, modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>, type: D, primaryKey?: keyof T) {
+  initBase (DataDir: string, modelName: string, modelSchemaDefine: DefineDataTypeObject<T>, type: D, primaryKey?: keyof T) {
     this.primaryKey = primaryKey
 
     this.databaseType = type
@@ -36,7 +36,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     lodash.forEach(this.modelSchemaDefine.default, (define, key) => {
       switch (define.prop) {
         case DefineDataPropEnum.Value: {
-          const value = define as DefineDataTypeValue<T[string & keyof T]>
+          const value = define as DefineDataTypeValue<T[keyof T]>
 
           const type: keyof typeof DataTypes = value.type === 'text' ? 'TEXT' : value.type === 'number' ? 'INTEGER' : value.type === 'boolean' ? 'BOOLEAN' : 'STRING'
 
@@ -48,13 +48,13 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
           break
         }
         case DefineDataPropEnum.Array: {
-          const Array = define as DefineDataTypeArray<T[string & keyof T]>
-          modelSchemaOptions.push(Database.ArrayColumn(key, define.prop === DefineDataPropEnum.Value, Array.default))
+          const Array = define as DefineDataTypeArray<T[keyof T]>
+          modelSchemaOptions.push(Database.ArrayColumn(key, Array.defaultItem.prop === DefineDataPropEnum.Value, Array.default))
           break
         }
         case DefineDataPropEnum.Object:
         case DefineDataPropEnum.OArray: {
-          const Object = define as IsUniformRecord<T[string & keyof T]> extends true ? DefineDataTypeOArray<T[string & keyof T]> : DefineDataTypeObject<T[string & keyof T]>
+          const Object = define as IsUniformRecord<T[keyof T]> extends true ? DefineDataTypeOArray<T[keyof T]> : DefineDataTypeObject<T[keyof T]>
           modelSchemaOptions.push(Database.ObjectColumn(key, Object.default))
           break
         }

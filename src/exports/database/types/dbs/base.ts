@@ -1,4 +1,4 @@
-import { DefineDataTypeOArray, DefineDataTypeObject, IsUniformRecord } from '@/exports/utils'
+import { DefineDataTypeObject } from '@/exports/utils'
 import { logger } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import { DataTypes, Model, ModelAttributeColumnOptions, ModelStatic } from 'sequelize'
@@ -56,7 +56,7 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
   modelName: string
 
   /** @description 表定义 */
-  modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>
+  modelSchemaDefine: DefineDataTypeObject<T>
 
   /** @description 检查数据库是否可用 */
   check (): Promise<boolean>
@@ -69,7 +69,7 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
    * @param type 数据库类型
    */
 
-  init (DataDir: string, modelName: string, modelSchemaDefine: IsUniformRecord<T> extends true ? DefineDataTypeOArray<T> : DefineDataTypeObject<T>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>>
+  init (DataDir: string, modelName: string, modelSchemaDefine: DefineDataTypeObject<T>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>>
 
   /** @description 将表定义转换 */
   getModelSchemaOptions (): ModelAttributes<Model, T>
