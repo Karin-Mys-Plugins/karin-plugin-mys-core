@@ -28,5 +28,5 @@ export interface BindUidsItemType {
 export type BaseGameUIDInfoTableType<Game extends string> = {
   [P in `${Game}-main`]: string
 } & {
-  [P in `${Game}-uids`]: Partial<Record<string, BindUidsItemType>>
+  [P in `${Game}-uids`]: Record<string, BindUidsItemType>
 }
