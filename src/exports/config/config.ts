@@ -51,7 +51,7 @@ export class Config<C extends { [key: string]: any }> {
 
     this.#ConfigPath = path.join(ConfigDir, `${splitName[1]}.json`)
 
-    this.#DefaultConfig = common.filterData({}, DefineConfig)
+    this.#DefaultConfig = common.filterData(undefined, DefineConfig, true)
     this.#DefineConfig = DefineConfig
 
     existToMkdirSync(ConfigDir)
@@ -75,7 +75,7 @@ export class Config<C extends { [key: string]: any }> {
 
   mergeWithDefaults (userConfig: C, defaultConfig: C, DefineConfig: IsUniformRecord<C> extends true ? DefineDataTypeOArray<C> : DefineDataTypeObject<C>): C {
     // 先过滤用户配置，只保留默认配置中定义的字段
-    const filteredUserConfig = common.filterData(userConfig, DefineConfig)
+    const filteredUserConfig = common.filterData(userConfig, DefineConfig, true)
 
     // 然后合并配置
     const result = lodash.merge({}, defaultConfig, filteredUserConfig)

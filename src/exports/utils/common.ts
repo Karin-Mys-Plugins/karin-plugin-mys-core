@@ -1,3 +1,4 @@
+import { logger } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import { DefineDataPropEnum, DefineDataTypeArray, DefineDataTypeOArray, DefineDataTypeObject, DefineDataTypeValue } from './types'
 
@@ -67,10 +68,10 @@ export function DefineValve<T extends string | number | boolean> (value: T | (()
   }
 }
 
-export function filterData (data: any, define: DefineDataTypeObject<any> | DefineDataTypeArray<any> | DefineDataTypeOArray<any> | DefineDataTypeValue<any>, defaultValue?: any): any {
+export function filterData (data: any, define: DefineDataTypeObject<any> | DefineDataTypeArray<any> | DefineDataTypeOArray<any> | DefineDataTypeValue<any>, throwErr: boolean = false): any {
   switch (define.prop) {
     case DefineDataPropEnum.Array: {
-      if (!Array.isArray(data)) return defaultValue || define.default
+      if (!Array.isArray(data)) return define.default
 
       const filtered: typeof define.default = []
 
@@ -81,33 +82,34 @@ export function filterData (data: any, define: DefineDataTypeObject<any> | Defin
           if (!lodash.isPlainObject(value)) return
 
           const _value = value as Record<string, any>
-          if (define.required && !define.required.every(k => _value[k] !== undefined && _value[k] !== null && _value[k] !== '' && !isNaN(filterValue))) return
+          if (define.required && !define.required.every(k => _value[k] !== undefined && _value[k] !== null && _value[k] !== '' && !(typeof filterValue === 'number' && isNaN(filterValue)))) return
         }
 
-        filterValue !== undefined && filterValue !== null && filterValue !== '' && !isNaN(filterValue) && filtered.push(filterValue)
+        filterValue !== '' && !(typeof filterValue === 'number' && isNaN(filterValue)) && filtered.push(filterValue)
       })
 
       return filtered
     }
     case DefineDataPropEnum.Object: {
-      if (!lodash.isPlainObject(data)) return defaultValue || define.default
+      if (!lodash.isPlainObject(data)) return define.default
+
+      if (define.required && !define.required.every(k => data[k] !== undefined && data[k] !== null && data[k] !== '' && !(typeof data[k] === 'number' && isNaN(data[k])))) {
+        const msg = `${JSON.stringify(data)} Error: keys ${define.required.join(', ')} undefined or has invalid value!`
+        if (throwErr) throw new Error(msg)
+
+        logger.error(msg)
+      }
 
       const filtered: typeof define.default = {}
 
       lodash.forEach(define.default, (value, key) => {
-        const filterValue = filterData(data[key], value)
-
-        if (define.required && !define.required.every(k => data[k] !== undefined && data[k] !== null && data[k] !== '' && !isNaN(filterValue))) {
-          throw new Error(`keys ${define.required.join(', ')} undefined or has invalid value!`)
-        }
-
-        filtered[key] = filterValue
+        filtered[key] = filterData(data[key], value, true)
       })
 
       return filtered
     }
     case DefineDataPropEnum.OArray: {
-      if (!lodash.isPlainObject(data)) return defaultValue || define.default
+      if (!lodash.isPlainObject(data)) return define.default
 
       const filtered: typeof define.default = {}
 
@@ -118,14 +120,12 @@ export function filterData (data: any, define: DefineDataTypeObject<any> | Defin
           if (!lodash.isPlainObject(value)) return
 
           const _value = value as Record<string, any>
-          if (define.required && !define.required.every(k => _value[k] !== undefined && _value[k] !== null && _value[k] !== '' && !isNaN(filterValue))) return
+          if (define.required && !define.required.every(k => _value[k] !== undefined && _value[k] !== null && _value[k] !== '' && !(typeof filterValue === 'number' && isNaN(filterValue)))) return
         }
 
         if (define.defaultItem.prop === DefineDataPropEnum.Array && !Array.isArray(value)) return
 
-        if (filterValue === undefined && filterValue === null && define.defaultItem.prop === DefineDataPropEnum.Value && isNaN(filterValue)) return
-
-        filtered[key] = filterValue
+        !(typeof filterValue === 'number' && isNaN(filterValue)) && (filtered[key] = filterValue)
       })
 
       define.requiredDefault && define.requiredDefault.forEach(key => {
@@ -135,7 +135,7 @@ export function filterData (data: any, define: DefineDataTypeObject<any> | Defin
       return filtered
     }
     case DefineDataPropEnum.Value: {
-      if (data === undefined || data === null) return defaultValue ?? define.default
+      if (data === undefined || data === null) return define.default
 
       switch (define.type) {
         case 'text':
@@ -146,17 +146,17 @@ export function filterData (data: any, define: DefineDataTypeObject<any> | Defin
             case 'number':
               return data + ''
           }
-          return defaultValue ?? (typeof define.default === 'function' ? define.default() : define.default)
+          return typeof define.default === 'function' ? define.default() : define.default
         case 'number': {
           switch (typeof data) {
             case 'number':
               return data
             case 'string': {
               const num = +data
-              return isNaN(num) ? (defaultValue ?? (typeof define.default === 'function' ? define.default() : define.default)) : num
+              return isNaN(num) ? (typeof define.default === 'function' ? define.default() : define.default) : num
             }
           }
-          return defaultValue ?? (typeof define.default === 'function' ? define.default() : define.default)
+          return typeof define.default === 'function' ? define.default() : define.default
         }
         case 'boolean':
           return !!data

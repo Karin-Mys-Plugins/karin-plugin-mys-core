@@ -65,7 +65,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
   }
 
   SchemaDefault (pk: string): T {
-    return common.filterData({ [this.primaryKey!]: pk } as T, this.modelSchemaDefine)
+    return common.filterData({ [this.model?.primaryKeyAttribute || this.primaryKey!]: pk } as T, this.modelSchemaDefine, true)
   }
 
   userPath (pk: string) {
@@ -111,7 +111,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
     lodash.forEach(this.modelSchemaDefine, (define, key) => {
       if (key !== this.primaryKey!) {
-        const mergeData = common.filterData(data[key], define as any)
+        const mergeData = common.filterData(data[key], define as any, true)
 
         json.writeSync(`${path}/${key as string}.json`, {
           key,
@@ -128,7 +128,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     return async (data: Partial<T>) => {
       const userPath = this.userPath(pk)
 
-      const mergeData = common.filterData(data, this.modelSchemaDefine)
+      const mergeData = common.filterData({ [this.primaryKey!]: pk, ...data }, this.modelSchemaDefine, true)
       delete mergeData[this.primaryKey!]
 
       json.writeSync(userPath, mergeData)
@@ -165,8 +165,12 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
   saveSql (model: Model<any, any>, pk: string): (data: Partial<T>) => Promise<DatabaseReturn<T>[DatabaseType.Db]> {
     return async (data: Partial<T>) => {
-      const mergeData: Partial<T> = common.filterData(data, this.modelSchemaDefine)
+      const mergeData: Partial<T> = common.filterData({ [this.model!.primaryKeyAttribute]: pk, ...data }, this.modelSchemaDefine, true)
       delete mergeData[this.model!.primaryKeyAttribute]
+
+      lodash.forEach(mergeData, (value, key) => {
+        if (data[key] === undefined || data[key] === null) delete mergeData[key]
+      })
 
       const result = await model.update(mergeData)
       return {
