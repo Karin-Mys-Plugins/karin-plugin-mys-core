@@ -10,8 +10,7 @@ export const CoreCfg = new Config<DefaultCoreConfigType>(`${dir.name}:config`, d
     proxy: {
       prop: DefineDataPropEnum.OArray,
       default: {
-        github: 'https://gh-proxy.org',
-        [MysAccountType.os]: '',
+        github: 'https://gh-proxy.org'
       },
       defaultItem: {
         prop: DefineDataPropEnum.Value,

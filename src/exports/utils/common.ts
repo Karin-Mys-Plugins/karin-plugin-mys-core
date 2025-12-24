@@ -123,7 +123,13 @@ export function filterData (data: any, define: DefineDataTypeObject<any> | Defin
 
         if (define.defaultItem.prop === DefineDataPropEnum.Array && !Array.isArray(value)) return
 
-        filterValue !== undefined && filterValue !== null && filterValue !== '' && !isNaN(filterValue) && (filtered[key] = filterValue)
+        if (filterValue === undefined && filterValue === null && define.defaultItem.prop === DefineDataPropEnum.Value && isNaN(filterValue)) return
+
+        filtered[key] = filterValue
+      })
+
+      define.requiredDefault && define.requiredDefault.forEach(key => {
+        filtered[key] = filtered[key] ?? (define.default[key] ?? filterData(undefined, define.defaultItem))
       })
 
       return filtered

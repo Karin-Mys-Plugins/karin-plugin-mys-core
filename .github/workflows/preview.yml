@@ -71,7 +71,11 @@ jobs:
             PNPM_INSTALL_CMD="未找到安装命令"
           fi
 
+          # 转换为 UTC+8 时间
+          BEIJING_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')
+
           echo "pnpm_install_cmd=$PNPM_INSTALL_CMD" >> $GITHUB_OUTPUT
+          echo "published_time=$BEIJING_TIME" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -85,7 +89,7 @@ jobs:
             ### 🏷️ 包信息
             - **版本:** `${{ env.PREVIEW_VERSION }}`
             - **提交:** [`${{ github.event.pull_request.head.sha }}`](https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }})
-            - **发布时间:** `${{ github.event.pull_request.updated_at }}`
+            - **发布时间:** `${{ steps.pkg-pr-new.outputs.published_time }}`
 
             ### 📥 安装命令
             ```bash

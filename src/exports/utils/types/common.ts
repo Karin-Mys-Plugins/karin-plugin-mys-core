@@ -20,7 +20,7 @@ export interface DefineDataTypeArray<V extends string | number | Record<string, 
 
 export interface DefineDataTypeOArray<D extends Record<string, any>> {
   prop: DefineDataPropEnum.OArray
-  default: D
+  default: Partial<D>
   defaultItem: D[keyof D] extends string | number | boolean ? DefineDataTypeValue<D[keyof D]> : D[keyof D] extends Array<infer U> ? DefineDataTypeArray<U extends string | number | Record<string, any> ? U : any> : D[keyof D] extends Record<string, any> ? DefineDataTypeObject<D[keyof D]> : never
   required?: D[keyof D] extends Record<string, any> ? (Extract<keyof D[keyof D], string>)[] : never
   requiredDefault?: (Extract<keyof D, string>)[]
