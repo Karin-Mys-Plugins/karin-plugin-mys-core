@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.27...v1.1.0) (2025-12-24)
+
+
+### ✨ 新功能
+
+* 迁移至tsdown、优化配置文件、数据库表定义 ([9270837](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/9270837f63dfe97e15761b2ec4c00fe8900b1897))
+
+
+### 🐛 错误修复
+
+* 优化类型推断 ([efcaa42](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/efcaa42b99bab4613278e18029cdb25b06e620f7))
+* 修复类型错误 ([f22bb00](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/f22bb0086dbf4a925ab65e2ec38fb5c5785c2262))
+* 删除不应该使用的类型 ([81ec2ba](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/81ec2ba82a6bf2e81a79153c8c84bbe8a7860208))
+* 判断错误、主键缺失 ([12df774](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/12df774358ae6b768836d96e516e2eabbed830dd))
+* 宽松判断 ([e9894bc](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/e9894bcb77782b33c80ff6327207453fbbedfbb6))
+* 枚举类型 ([9b6bd8f](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/9b6bd8fdf11bf96137f3407f82e4bf91114ead49))
+
 ## [1.0.27](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.26...v1.0.27) (2025-12-21)
 
 
