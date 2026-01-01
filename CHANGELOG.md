@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.1.0...v1.1.1) (2026-01-01)
+
+
+### 🐛 错误修复
+
+* 使用oxlint替代eslint ([006be9c](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/006be9c9dfed5a9cc97908fdd6b34fec04eb3ca4))
+
 ## [1.1.0](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.27...v1.1.0) (2025-12-24)
 
 
