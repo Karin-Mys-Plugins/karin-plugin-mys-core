@@ -24,7 +24,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     this.databaseType = type
     this.databasePath = path.join(DataDir, modelName)
 
-    type !== DatabaseType.Db && existToMkdirSync(this.databasePath)
+    if (type !== DatabaseType.Db) existToMkdirSync(this.databasePath)
 
     this.modelName = modelName
     this.modelSchemaDefine = modelSchemaDefine

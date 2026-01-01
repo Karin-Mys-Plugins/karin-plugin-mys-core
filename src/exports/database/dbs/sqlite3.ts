@@ -238,7 +238,8 @@ export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassSta
           } else {
             try {
               data = JSON.parse(data) || []
-            } catch (e) {
+            } catch (err) {
+              logger.error(err)
               data = []
             }
 
@@ -265,7 +266,8 @@ export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassSta
           let data = this.getDataValue(key)
           try {
             data = JSON.parse(data) || def
-          } catch (e) {
+          } catch (err) {
+            logger.error(err)
             data = def
           }
           return data

@@ -9,7 +9,8 @@ type ToString<T> = T extends string | number ? `${T}` : never
 
 // 递归生成嵌套键路径类型
 type PathImpl<T, Key extends keyof T> = Key extends string | number
-  ? T[Key] extends Record<string, any> ? T[Key] extends ArrayLike<any> ? ToString<Key> | `${ToString<Key>}.${PathImpl<T[Key], Exclude<keyof T[Key], keyof any[]>>}` : ToString<Key> | `${ToString<Key>}.${PathImpl<T[Key], keyof T[Key]>}` : ToString<Key>
+  ? T[Key] extends Record<string, any> ? T[Key] extends ArrayLike<any> ? ToString<Key> | `${ToString<Key>}.${PathImpl<T[Key], Exclude<keyof T[Key], keyof any[]>>}`
+  : ToString<Key> | `${ToString<Key>}.${PathImpl<T[Key], keyof T[Key]>}` : ToString<Key>
   : never
 
 type Path<T> = PathImpl<T, keyof T> | keyof T
@@ -56,7 +57,7 @@ export class Config<C extends { [key: string]: any }> {
 
     existToMkdirSync(ConfigDir)
 
-    !existsSync(this.#ConfigPath) && writeJsonSync(this.#ConfigPath, this.#DefaultConfig, true)
+    if (!existsSync(this.#ConfigPath)) writeJsonSync(this.#ConfigPath, this.#DefaultConfig, true)
 
     this.loadConfig()
   }
@@ -141,7 +142,7 @@ export class Config<C extends { [key: string]: any }> {
   set<P extends Path<C> | ''> (path: P, value: C | PathValue<C, P>, save: boolean): void {
     lodash.set(this.#ConfigCache!, String(path), value)
 
-    save && this.save()
+    if (save) this.save()
   }
 
   /**
@@ -159,7 +160,7 @@ export class Config<C extends { [key: string]: any }> {
 
   watch (fnc?: (self: Config<C>, oldData: C, newData: C) => Promise<void> | void) {
     watch(this.#ConfigPath, async (oldData: C, newData) => {
-      fnc && await fnc(this, oldData, newData)
+      if (fnc) await fnc(this, oldData, newData)
 
       this.loadConfig()
     })

@@ -117,7 +117,7 @@ export const getUserGameRolesByCookie = new DefineApi<
   null,
   { cookie: string } & BaseltuidInfoType
 >(
-  (self, data) => ({
+  (self) => ({
     Method: 'GET',
     Url: new URL(`${MysHosts.web[self.isHoyolab ? MysAccountType.os : MysAccountType.cn]}binding/api/getUserGameRolesByCookie`),
     HeaderFn: self.CookieHeaders
@@ -134,7 +134,7 @@ export const getUserFullInfo = new DefineApi<
   },
   null,
   { cookie: string } & BaseltuidInfoType
->((self, data) => ({
+>((self) => ({
   Method: 'GET',
   Url: new URL(`${MysHosts.web.miyoushe}user/wapi/getUserFullInfo?gids=2`),
   HeaderFn: self.CookieHeaders
@@ -146,7 +146,7 @@ export const getDeviceFp = new DefineApi<
       device_fp: string
     }
   }
->((self, data) => ({
+>((self) => ({
   Method: 'POST',
   Url: new URL(`${MysHosts.publicData[self.isHoyolab ? MysAccountType.os : MysAccountType.cn]}device-fp/api/getFp`),
   Body: (function () {

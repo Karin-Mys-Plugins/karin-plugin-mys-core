@@ -23,7 +23,7 @@ export type ApiInfoFn<
   Body?: any
   Method: 'GET' | 'POST'
   Options?: Omit<AxiosRequestConfig, 'url' | 'method' | 'data' | 'headers'>
-  HeaderFn: () => Record<string, string> | Promise<Record<string, string>>
+  HeaderFn: (options: { query?: string, body?: any }) => Record<string, string> | Promise<Record<string, string>>
   /** @description 对响应数据进行处理 */
   Result?: (response: AxiosResponse) => Promise<{ data: R, row: any }>
 }

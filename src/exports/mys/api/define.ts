@@ -59,7 +59,7 @@ export class DefineApi<
 
         const result = await this.#requestData(this.#apiInfo, data)
 
-        seconds > 0 && await redis.setEx(redisKey, seconds, JSON.stringify(result))
+        if (seconds > 0) await redis.setEx(redisKey, seconds, JSON.stringify(result))
 
         return result
       }
@@ -90,7 +90,7 @@ export class DefineApi<
     if (userInfo?.deviceMd5) {
       const deviceData = await DeviceInfo.get(userInfo.deviceMd5)
 
-      deviceData && this.#setDevice(deviceData)
+      if (deviceData) this.#setDevice(deviceData)
     }
 
     if (!this.DeviceInfo) {
@@ -112,7 +112,7 @@ export class DefineApi<
   async #requestData (apiInfo: ApiInfoFn<any, any, any>, data: any): Promise<RequestResult<R>> {
     const { Url, Body, Method, Options = {}, HeaderFn, Result } = apiInfo(this, data)
 
-    const Headers = new AxiosHeaders(await HeaderFn())
+    const Headers = new AxiosHeaders(await HeaderFn({ query: Url.searchParams.toString(), body: Body }))
 
     if (this.#useFp) {
       Headers.set('x-rpc-device_id', this.DeviceInfo.deviceId)
@@ -166,7 +166,7 @@ export class DefineApi<
     return `${t},${r},${md5(`salt=${MysApp.salt[saltKey]}&t=${t}&r=${r}&b=${body}&q=${query}`)}`
   }
 
-  NoHeaders = (options: { query?: string, body?: any } = {}) => ({})
+  NoHeaders = () => ({})
 
   BaseCnHeaders = () => ({
     'x-rpc-app_version': MysApp.version.cn,
@@ -196,7 +196,7 @@ export class DefineApi<
     ...(this[this.isHoyolab ? 'BaseOsHeaders' : 'BaseCnHeaders']())
   })
 
-  OkHttpHeaders = (options: { query?: string, body?: any } = {}) => ({
+  OkHttpHeaders = () => ({
     'User-Agent': 'okhttp/4.9.3',
     Connection: 'Keep-Alive',
     'Accept-Encoding': 'gzip',

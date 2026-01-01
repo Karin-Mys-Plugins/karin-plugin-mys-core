@@ -6,7 +6,7 @@ import karin, { handler, Message, segment } from 'node-karin'
 export const BindUID = karin.command(
   /^#?(.*?)绑定uid(?:\s*(.+))?$/i,
   async (e, next) => {
-    const msgMatch = e.msg.match(/^#?(?<prefix>.*?)绑定uid(?:\s*(?<uid>.+))?$/i)?.groups!
+    const msgMatch = e.msg.match(/^#?(?<prefix>.*?)绑定uid(?:\s*(?<uid>.+))?$/i)!.groups!
 
     const Game = MysGame.match(msgMatch.prefix?.trim() || '')
     if (!Game) return next()
@@ -38,7 +38,7 @@ export const BindUID = karin.command(
 export const UnbindUID = karin.command(
   /^#?(.*?)(删除|解绑)uid(?:\s*(.+))?$/i,
   async (e, next) => {
-    const msgMatch = e.msg.match(/^#?(?<prefix>.*?)(删除|解绑)uid(?:\s*(?<idx>.+))?$/i)?.groups!
+    const msgMatch = e.msg.match(/^#?(?<prefix>.*?)(删除|解绑)uid(?:\s*(?<idx>.+))?$/i)!.groups!
 
     const Game = MysGame.match(msgMatch.prefix?.trim() || '')
     if (!Game) return next()
@@ -102,7 +102,7 @@ export const UnbindUID = karin.command(
 export const ChangeMainUID = karin.command(
   /^#?(.*?)(切换|更改)uid(?:\s*(.+))?$/i,
   async (e, next) => {
-    const msgMatch = e.msg.match(/^#?(?<prefix>.*?)(切换|更改)uid(?:\s*(?<idx>.+))?$/i)?.groups!
+    const msgMatch = e.msg.match(/^#?(?<prefix>.*?)(切换|更改)uid(?:\s*(?<idx>.+))?$/i)!.groups!
 
     const Game = MysGame.match(msgMatch.prefix?.trim() || '')
     if (!Game) return next()
@@ -188,7 +188,7 @@ export const ShowBindAccountCmdFunc = async (e: Message) => {
   const image = await Render.template('ShowBindAccount', ShowBindAccountComponent, renderData, {
     type: 'png'
   })
-  image && e.reply(segment.image(image), { at: true })
+  if (image) e.reply(segment.image(image), { at: true })
 
   return true
 }
@@ -200,7 +200,7 @@ export const ShowBindAccount = karin.command(
 export const UnbindAccount = karin.command(
   /^#?(删除|解绑)(米游社|mys)账号(?:\s*(.+))?$/i,
   async (e) => {
-    const msgMatch = e.msg.match(/^#?(删除|解绑)(米游社|mys)账号(?:\s*(?<idx>.+))?$/i)?.groups!
+    const msgMatch = e.msg.match(/^#?(删除|解绑)(米游社|mys)账号(?:\s*(?<idx>.+))?$/i)!.groups!
 
     const uid = msgMatch.idx?.trim()
     const idx = +uid.split('.')[0]

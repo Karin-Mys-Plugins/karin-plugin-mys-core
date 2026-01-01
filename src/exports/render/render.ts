@@ -53,6 +53,8 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
     template: K, component: C, props: React.ComponentProps<C>,
     options: { type?: 'png' | 'jpeg' | 'webp', render?: Omit<Options, 'file' | 'data' | 'type' | 'omitBackground'> } = {}
   ) {
+    const { type: imageType = 'png', render: renderOptions = {} } = options
+
     const element = React.createElement(component, props)
 
     // 渲染 React 组件为 HTML 字符串
@@ -86,14 +88,13 @@ export class ReactRender<P extends Record<string, any>, K extends string> {
     fs.writeFileSync(savePath, Html, 'utf-8')
 
     const image = await karin.render({
-      type: options.type || 'png',
-      omitBackground: options.type !== 'png',
+      type: imageType,
+      omitBackground: imageType !== 'png',
       selector: 'container',
       setViewport: {
         deviceScaleFactor: 3
       },
-      ...(options.render || {}),
-
+      ...renderOptions,
       file: absPath(savePath)
     })
 

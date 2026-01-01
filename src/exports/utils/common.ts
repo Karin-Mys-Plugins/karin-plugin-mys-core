@@ -55,7 +55,7 @@ export const StrToObj = <
  * @param sep - 分隔符
  */
 export const ObjToStr = (obj: Record<string, string | number>, sep: string) => {
-  return Object.entries(obj).filter(([k, v]) => v).map(([k, v]) => `${k}=${v}`).join(sep) + sep
+  return Object.entries(obj).filter(([_k, v]) => v).map(([k, v]) => `${k}=${v}`).join(sep) + sep
 }
 
 export function DefineValve<T extends string> (value: T | (() => T), long?: boolean): DefineDataTypeValue<T>
@@ -85,7 +85,7 @@ export function filterData (data: any, define: DefineDataTypeObject<any> | Defin
           if (define.required && !define.required.every(k => _value[k] !== undefined && _value[k] !== null && _value[k] !== '' && !(typeof filterValue === 'number' && isNaN(filterValue)))) return
         }
 
-        filterValue !== '' && !(typeof filterValue === 'number' && isNaN(filterValue)) && filtered.push(filterValue)
+        if (filterValue !== '' && !(typeof filterValue === 'number' && isNaN(filterValue))) filtered.push(filterValue)
       })
 
       return filtered
@@ -125,10 +125,10 @@ export function filterData (data: any, define: DefineDataTypeObject<any> | Defin
 
         if (define.defaultItem.prop === DefineDataPropEnum.Array && !Array.isArray(value)) return
 
-        !(typeof filterValue === 'number' && isNaN(filterValue)) && (filtered[key] = filterValue)
+        if (!(typeof filterValue === 'number' && isNaN(filterValue))) filtered[key] = filterValue
       })
 
-      define.requiredDefault && define.requiredDefault.forEach(key => {
+      if (define.requiredDefault) define.requiredDefault.forEach(key => {
         filtered[key] = filtered[key] ?? (define.default[key] ?? filterData(undefined, define.defaultItem))
       })
 
