@@ -86,8 +86,8 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     return true
   }
 
-  saveFile (pk: string): (data: T) => Promise<boolean> {
-    return async (data: Partial<T>) => {
+  saveFile (pk: string): DatabaseReturn<T>[DatabaseType.File]['save'] {
+    const saveFn = async (data: Partial<T>, res: boolean = false) => {
       const userPath = this.userPath(pk)
 
       const mergeData = common.filterData({ [this.primaryKey!]: pk, ...data }, this.modelSchemaDefine, true)
@@ -95,18 +95,29 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
       json.writeSync(userPath, mergeData)
 
+      if (res) {
+        return this.readSync(userPath, pk)
+      }
+
       return true
     }
+
+    return saveFn as DatabaseReturn<T>[DatabaseType.File]['save']
   }
 
-  saveDir (pk: string): (data: T) => Promise<boolean> {
-    return async (data: Partial<T>) => {
+  saveDir (pk: string): DatabaseReturn<T>[DatabaseType.Dir]['save'] {
+    const saveFn = async (data: Partial<T>, res: boolean = false) => {
       delete data[this.primaryKey!]
 
       this.writeDirSync(pk, data)
+      if (res) {
+        return this.readDirSync(pk)
+      }
 
       return true
     }
+
+    return saveFn as DatabaseReturn<T>[DatabaseType.Dir]['save']
   }
 
   destroyPath (pk: string): Promise<boolean> {

@@ -225,7 +225,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
               ...data,
               save: this.saveDir(pk),
               destroy: () => this.destroyPath(pk)
-            } as DatabaseReturn<T>[D]
+            }
           } else {
             json.writeSync(path, data)
 
@@ -233,7 +233,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
               ...data,
               save: this.saveFile(pk),
               destroy: () => this.destroyPath(pk)
-            } as DatabaseReturn<T>[D]
+            }
           }
         }
 
@@ -241,9 +241,9 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
       }
 
       if (this.databaseType === DatabaseType.Dir) {
-        return this.readDirSync(pk) as DatabaseReturn<T>[D]
+        return this.readDirSync(pk)
       } else {
-        return this.readSync(path, pk) as DatabaseReturn<T>[D]
+        return this.readSync(path, pk)
       }
     } else {
       const selectSQL = `SELECT * FROM ${this.modelName} WHERE ${this.primaryKey} = ?`
@@ -294,7 +294,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
         ...result,
         save: this.saveSqlNative(pk),
         destroy: () => this.destroy(pk)
-      } as DatabaseReturn<T>[D]
+      }
     }
   }
 
@@ -305,9 +305,9 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
         const path = this.userPath(pk)
         if (existsSync(path)) {
           if (this.databaseType === DatabaseType.Dir) {
-            result.push(this.readDirSync(pk) as DatabaseReturn<T>[D])
+            result.push(this.readDirSync(pk))
           } else {
-            result.push(this.readSync(path, pk) as DatabaseReturn<T>[D])
+            result.push(this.readSync(path, pk))
           }
         }
       })
@@ -335,7 +335,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
         ...item,
         save: this.saveSqlNative(item[this.primaryKey]),
         destroy: () => this.destroy(item[this.primaryKey])
-      })) as DatabaseReturn<T>[D][]
+      }))
     }
   }
 
@@ -352,7 +352,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
 
           const stat = fs.statSync(path.join(this.databasePath, file))
           if (stat.isDirectory()) {
-            result.push(this.readDirSync(file) as DatabaseReturn<T>[D])
+            result.push(this.readDirSync(file))
           }
         })
       } else {
@@ -362,7 +362,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
           const pk = file.replace('.json', '')
           if (excludeSet.has(pk)) return
 
-          result.push(this.readSync(this.userPath(pk), pk) as DatabaseReturn<T>[D])
+          result.push(this.readSync(this.userPath(pk), pk))
         })
       }
 
@@ -393,7 +393,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
         ...item,
         save: this.saveSqlNative(item[this.primaryKey]),
         destroy: () => this.destroy(item[this.primaryKey])
-      })) as DatabaseReturn<T>[D][]
+      }))
     }
   }
 
@@ -417,8 +417,8 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
     }
   }
 
-  private saveSqlNative (pk: string): (data: Partial<T>) => Promise<boolean> {
-    return async (data: Partial<T>) => {
+  private saveSqlNative (pk: string): DatabaseReturn<T>[DatabaseType.Db]['save'] {
+    const saveFn = async (data: Partial<T>, res: boolean = false) => {
       const updateData = { ...data }
       delete updateData[this.primaryKey]
 
@@ -451,7 +451,31 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
         })
       }
 
+      if (res) {
+        const selectSQL = `SELECT * FROM ${this.modelName} WHERE ${this.primaryKey} = ?`
+
+        const result = await new Promise<any>((resolve, reject) => {
+          this.model.get(selectSQL, [pk], (err, row) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(row)
+            }
+          })
+        })
+
+        this.parseRowData(result)
+
+        return {
+          ...result,
+          save: this.saveSqlNative(pk),
+          destroy: () => this.destroy(pk)
+        }
+      }
+
       return true
     }
+
+    return saveFn as DatabaseReturn<T>[DatabaseType.Db]['save']
   }
 }

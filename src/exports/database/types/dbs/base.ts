@@ -30,15 +30,24 @@ export const enum DataTypes {
 
 export interface DatabaseReturn<T> {
   [DatabaseType.Db]: T & {
-    save: (data: Partial<T>) => Promise<boolean>
+    save<R extends boolean = false> (
+      data: Partial<T>,
+      res?: R
+    ): Promise<R extends true ? DatabaseReturn<T>[DatabaseType.Db] : boolean>
     destroy: () => Promise<boolean>
   }
   [DatabaseType.File]: T & {
-    save: (data: T) => Promise<boolean>
+    save<R extends boolean = false> (
+      data: T,
+      res?: R
+    ): Promise<R extends true ? DatabaseReturn<T>[DatabaseType.File] : boolean>
     destroy: () => Promise<boolean>
   }
   [DatabaseType.Dir]: T & {
-    save: (data: T) => Promise<boolean>
+    save<R extends boolean = false> (
+      data: T,
+      res?: R
+    ): Promise<R extends true ? DatabaseReturn<T>[DatabaseType.Dir] : boolean>
     destroy: () => Promise<boolean>
   }
 }
@@ -87,10 +96,10 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
   writeDirSync (pk: string, data: Record<string, any>): boolean
 
   /** @description 保存用户数据到文件 */
-  saveFile (pk: string): (data: T) => Promise<boolean>
+  saveFile (pk: string): DatabaseReturn<T>[DatabaseType.File]['save']
 
   /** @description 保存用户数据到目录 */
-  saveDir (pk: string): (data: T) => Promise<boolean>
+  saveDir (pk: string): DatabaseReturn<T>[DatabaseType.Dir]['save']
 
   /** @description 根据主键查找并创建用户数据 */
   findByPk (pk: string, create: true): Promise<DatabaseReturn<T>[D]>
