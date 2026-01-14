@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.1](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.1.0...v1.1.1) (2026-01-14)
+
+
+### 🐛 错误修复
+
+* 使用oxlint替代eslint ([006be9c](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/006be9c9dfed5a9cc97908fdd6b34fec04eb3ca4))
+* 换回eslint ([8d29fe7](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/8d29fe736039a3cb48abd930ba89efa402e02315))
+
+
+### ♻️ 代码重构
+
+* 移除sequelize ([fe7cb75](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/fe7cb757f81843b6bd02b9e53b03ce73ad28eb9c))
+
 ## [1.1.0](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.0.27...v1.1.0) (2025-12-24)
 
 
