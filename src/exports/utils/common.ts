@@ -68,7 +68,7 @@ export function DefineValve<T extends string | number | boolean> (value: T | (()
   }
 }
 
-export function filterData (data: any, define: DefineDataTypeObject<any> | DefineDataTypeArray<any> | DefineDataTypeOArray<any> | DefineDataTypeValue<any>, throwErr: boolean = false): any {
+export function filterData (data: any, define: DefineDataTypeObject<any, any> | DefineDataTypeArray<any> | DefineDataTypeOArray<any> | DefineDataTypeValue<any>, throwErr: boolean = false): any {
   switch (define.prop) {
     case DefineDataPropEnum.Array: {
       if (!Array.isArray(data)) return define.default

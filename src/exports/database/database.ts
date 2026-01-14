@@ -1,11 +1,10 @@
 import { logger } from 'node-karin'
-import { DataTypes, Model, ModelAttributeColumnOptions } from 'sequelize'
-import { Sqlite3, Sqlite3Static } from './dbs/sqlite3'
-import { ColumnOption, ColumnOptionType, DatabaseClassStatic, DatabaseFn, DatabaseType, Dialect } from './types'
+import { Sqlite3 } from './dbs/sqlite3'
+import { DatabaseFn, DatabaseType, Dialect } from './types'
 
 export const Database = new class DatabaseClass {
   #defaultDialect = Dialect.Sqlite
-  #DatabaseMap: Map<Dialect, { Database: DatabaseFn, Static: DatabaseClassStatic }> = new Map()
+  #DatabaseMap: Map<Dialect, { Database: DatabaseFn, desc: string }> = new Map()
 
   default (dialect: Dialect) {
     const db = this.#DatabaseMap.get(dialect)
@@ -18,12 +17,12 @@ export const Database = new class DatabaseClass {
   }
 
   /** @description 添加数据库 */
-  async Add (Db: DatabaseFn, Static: DatabaseClassStatic) {
+  async Add (Db: DatabaseFn) {
     const db = Db()
     if (await db.check()) {
-      this.#DatabaseMap.set(Static.dialect, { Database: Db, Static })
+      this.#DatabaseMap.set(db.dialect, { Database: Db, desc: db.description })
     } else {
-      logger.error(`${Static.dialect} check failed!`)
+      logger.error(`${db.dialect} check failed!`)
     }
   }
 
@@ -40,8 +39,8 @@ export const Database = new class DatabaseClass {
   }
 
   get details (): { dialect: Dialect, desc: string }[] {
-    return Array.from(this.#DatabaseMap.entries()).map(([dialect, { Static }]) => ({
-      dialect, desc: Static.description
+    return Array.from(this.#DatabaseMap.entries()).map(([dialect, { desc }]) => ({
+      dialect, desc
     }))
   }
 
@@ -49,36 +48,8 @@ export const Database = new class DatabaseClass {
   get<T extends Record<string, any>, D extends DatabaseType> () {
     return this.Db.Database<T, D>()
   }
-
-  get PkColumn () {
-    return <K extends string> (
-      key: K, type: keyof typeof DataTypes, option?: Partial<ModelAttributeColumnOptions<Model>>
-    ): ColumnOption<ColumnOptionType.Normal, K> => ({
-      key,
-      type: ColumnOptionType.Normal,
-      Option: {
-        type: DataTypes[type],
-        primaryKey: true,
-        allowNull: false,
-        ...option
-      }
-    })
-  }
-
-  get Column (): DatabaseClassStatic['Column'] {
-    return this.Db.Static.Column
-  }
-
-  get ArrayColumn (): DatabaseClassStatic['ArrayColumn'] {
-    return this.Db.Static.ArrayColumn
-  }
-
-  get ObjectColumn (): DatabaseClassStatic['ObjectColumn'] {
-    return this.Db.Static.ObjectColumn
-  }
 }()
 
 await Database.Add(
-  <T extends Record<string, any>, D extends DatabaseType> () => new Sqlite3<T, D>(),
-  Sqlite3Static
+  <T extends Record<string, any>, D extends DatabaseType> () => new Sqlite3<T, D>()
 )

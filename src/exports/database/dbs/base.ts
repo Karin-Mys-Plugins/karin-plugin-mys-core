@@ -1,25 +1,21 @@
-import { common, DefineDataPropEnum, DefineDataTypeArray, DefineDataTypeOArray, DefineDataTypeObject, DefineDataTypeValue, IsUniformRecord } from '@/exports/utils'
+import { common, DefineDataTypeObject } from '@/exports/utils'
 import { existToMkdirSync, json, logger, rmSync } from 'node-karin'
 import lodash from 'node-karin/lodash'
 import fs from 'node:fs'
 import path from 'node:path'
-import { DataTypes, Model, ModelStatic } from 'sequelize'
-import { Database } from '../database'
-import { DatabaseReturn, DatabaseType, ModelAttributes } from '../types'
+import { DatabaseReturn, DatabaseType } from '../types'
 
 export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
-  primaryKey: keyof T | undefined
-
-  declare model: ModelStatic<Model> | undefined
+  declare primaryKey: keyof T & string
 
   declare databasePath: string
   declare databaseType: D
 
   declare modelName: string
-  declare modelSchemaDefine: DefineDataTypeObject<T>
+  declare modelSchemaDefine: DefineDataTypeObject<T, 1>
 
-  initBase (DataDir: string, modelName: string, modelSchemaDefine: DefineDataTypeObject<T>, type: D, primaryKey?: keyof T) {
-    this.primaryKey = primaryKey
+  initBase (DataDir: string, modelName: string, modelSchemaDefine: DefineDataTypeObject<T, 1>, type: D) {
+    this.primaryKey = modelSchemaDefine.required![0]
 
     this.databaseType = type
     this.databasePath = path.join(DataDir, modelName)
@@ -30,42 +26,8 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     this.modelSchemaDefine = modelSchemaDefine
   }
 
-  getModelSchemaOptions (): ModelAttributes<Model, T> {
-    const modelSchemaOptions: ModelAttributes<Model, T> = []
-
-    lodash.forEach(this.modelSchemaDefine.default, (define, key) => {
-      switch (define.prop) {
-        case DefineDataPropEnum.Value: {
-          const value = define as DefineDataTypeValue<T[keyof T]>
-
-          const type: keyof typeof DataTypes = value.type === 'text' ? 'TEXT' : value.type === 'number' ? 'INTEGER' : value.type === 'boolean' ? 'BOOLEAN' : 'STRING'
-
-          if (this.modelSchemaDefine.required!.includes(key)) {
-            modelSchemaOptions.push(Database.PkColumn(key, type))
-          } else {
-            modelSchemaOptions.push(Database.Column(key, type, value.default))
-          }
-          break
-        }
-        case DefineDataPropEnum.Array: {
-          const Array = define as DefineDataTypeArray<T[keyof T]>
-          modelSchemaOptions.push(Database.ArrayColumn(key, Array.defaultItem.prop === DefineDataPropEnum.Value, Array.default))
-          break
-        }
-        case DefineDataPropEnum.Object:
-        case DefineDataPropEnum.OArray: {
-          const Object = define as IsUniformRecord<T[keyof T]> extends true ? DefineDataTypeOArray<T[keyof T]> : DefineDataTypeObject<T[keyof T]>
-          modelSchemaOptions.push(Database.ObjectColumn(key, Object.default))
-          break
-        }
-      }
-    })
-
-    return modelSchemaOptions
-  }
-
   SchemaDefault (pk: string): T {
-    return common.filterData({ [this.model?.primaryKeyAttribute || this.primaryKey!]: pk } as T, this.modelSchemaDefine, true)
+    return common.filterData({ [this.primaryKey]: pk } as T, this.modelSchemaDefine, true)
   }
 
   userPath (pk: string) {
@@ -124,7 +86,7 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
     return true
   }
 
-  saveFile (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.File]> {
+  saveFile (pk: string): (data: T) => Promise<boolean> {
     return async (data: Partial<T>) => {
       const userPath = this.userPath(pk)
 
@@ -133,17 +95,17 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
       json.writeSync(userPath, mergeData)
 
-      return this.readSync(userPath, pk)
+      return true
     }
   }
 
-  saveDir (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.Dir]> {
+  saveDir (pk: string): (data: T) => Promise<boolean> {
     return async (data: Partial<T>) => {
       delete data[this.primaryKey!]
 
       this.writeDirSync(pk, data)
 
-      return this.readDirSync(pk)
+      return true
     }
   }
 
@@ -160,33 +122,6 @@ export class DbBase<T extends Record<string, any>, D extends DatabaseType> {
 
         resolve(false)
       }
-    })
-  }
-
-  saveSql (model: Model<any, any>, pk: string): (data: Partial<T>) => Promise<DatabaseReturn<T>[DatabaseType.Db]> {
-    return async (data: Partial<T>) => {
-      const mergeData: Partial<T> = common.filterData({ [this.model!.primaryKeyAttribute]: pk, ...data }, this.modelSchemaDefine, true)
-      delete mergeData[this.model!.primaryKeyAttribute]
-
-      lodash.forEach(mergeData, (value, key) => {
-        if (data[key] === undefined || data[key] === null) delete mergeData[key]
-      })
-
-      const result = await model.update(mergeData)
-      return {
-        ...result.toJSON<T>(),
-        save: this.saveSql(result, pk),
-        destroy: () => this.destroySql(pk)
-      }
-    }
-  }
-
-  destroySql (pk: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      const result = this.model!.destroy({ where: { [this.model!.primaryKeyAttribute]: pk } })
-        .then(count => count > 0).catch(() => false)
-
-      resolve(result)
     })
   }
 }

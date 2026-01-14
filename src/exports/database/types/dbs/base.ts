@@ -1,7 +1,6 @@
 import { DefineDataTypeObject } from '@/exports/utils'
 import { logger } from 'node-karin'
 import lodash from 'node-karin/lodash'
-import { DataTypes, Model, ModelAttributeColumnOptions, ModelStatic } from 'sequelize'
 
 export const enum Dialect {
   Sqlite = 'sqlite',
@@ -14,40 +13,41 @@ export const enum Dialect {
   Snowflake = 'snowflake',
 }
 
-export enum DatabaseType {
+export const enum DatabaseType {
   File = 'file',
   Dir = 'dir',
   Db = 'db',
 }
 
-export type ModelAttributes<M extends Model = Model, TAttributes = any> = {
-  key: keyof TAttributes
-  type: ColumnOptionType
-  Option: ModelAttributeColumnOptions<M>
-}[]
+export const enum DataTypes {
+  STRING = "STRING",
+  TEXT = "TEXT",
+  BIGINT = "BIGINT",
+  INTEGER = "INTEGER",
+  BOOLEAN = "BOOLEAN",
+  JSONB = "JSONB",
+}
 
 export interface DatabaseReturn<T> {
   [DatabaseType.Db]: T & {
-    save: (data: Partial<T>) => Promise<DatabaseReturn<T>[DatabaseType.Db]>
+    save: (data: Partial<T>) => Promise<boolean>
     destroy: () => Promise<boolean>
   }
   [DatabaseType.File]: T & {
-    save: (data: T) => Promise<DatabaseReturn<T>[DatabaseType.File]>
+    save: (data: T) => Promise<boolean>
     destroy: () => Promise<boolean>
   }
   [DatabaseType.Dir]: T & {
-    save: (data: T) => Promise<DatabaseReturn<T>[DatabaseType.Dir]>
+    save: (data: T) => Promise<boolean>
     destroy: () => Promise<boolean>
   }
 }
 
 export type DatabaseClassInstance<T extends Record<string, any>, D extends DatabaseType> = {
   dialect: Dialect
+  description: string
 
-  /** @description DatabaseType为Db时不使用 */
-  primaryKey: keyof T | undefined
-
-  model: ModelStatic<Model> | undefined
+  primaryKey: keyof T
 
   databasePath: string
   databaseType: D
@@ -71,9 +71,6 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
 
   init (DataDir: string, modelName: string, modelSchemaDefine: DefineDataTypeObject<T>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>>
 
-  /** @description 将表定义转换 */
-  getModelSchemaOptions (): ModelAttributes<Model, T>
-
   /** @description 获取表默认数据 */
   SchemaDefault (pk: string): T
 
@@ -90,13 +87,10 @@ export type DatabaseClassInstance<T extends Record<string, any>, D extends Datab
   writeDirSync (pk: string, data: Record<string, any>): boolean
 
   /** @description 保存用户数据到文件 */
-  saveFile (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.File]>
+  saveFile (pk: string): (data: T) => Promise<boolean>
 
   /** @description 保存用户数据到目录 */
-  saveDir (pk: string): (data: T) => Promise<DatabaseReturn<T>[DatabaseType.Dir]>
-
-  /** @description 保存用户数据到 SQL 数据库 */
-  saveSql (model: Model<any, any>, pk: string): (data: Partial<T>) => Promise<DatabaseReturn<T>[DatabaseType.Db]>
+  saveDir (pk: string): (data: T) => Promise<boolean>
 
   /** @description 根据主键查找并创建用户数据 */
   findByPk (pk: string, create: true): Promise<DatabaseReturn<T>[D]>
@@ -121,29 +115,6 @@ export const enum ColumnOptionType {
   Normal = 'normal',
   Array = 'array',
   Json = 'json',
-}
-
-export interface ColumnOption<T extends ColumnOptionType, K extends string> {
-  key: K; type: T; Option: ModelAttributeColumnOptions<Model>
-}
-
-export interface DatabaseClassStatic {
-  /** @description 数据库标识 */
-  dialect: Dialect
-  /** @description 数据库说明 */
-  description: string
-
-  Column<T, K extends string> (
-    key: K, type: keyof typeof DataTypes, def: T, option?: Partial<ModelAttributeColumnOptions<Model>>
-  ): ColumnOption<ColumnOptionType.Normal, K>
-
-  ArrayColumn<T, K extends string> (
-    key: K, split: boolean, def: T[]
-  ): ColumnOption<ColumnOptionType.Array, K>
-
-  ObjectColumn<T extends Record<string, any>, K extends string> (
-    key: K, def: T
-  ): ColumnOption<ColumnOptionType.Json, K>
 }
 
 export class DatabaseArray<T> extends Array<T> {

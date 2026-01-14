@@ -1,61 +1,205 @@
 import { dir } from '@/dir'
-import { DefineDataTypeObject } from '@/exports/utils'
+import { DefineDataPropEnum, DefineDataTypeArray, DefineDataTypeOArray, DefineDataTypeObject, DefineDataTypeValue } from '@/exports/utils'
 import { existsSync, json, logger, mkdirSync, rmSync } from 'node-karin'
+import lodash from 'node-karin/lodash'
+import sqlite3, { type Database } from 'node-karin/sqlite3'
 import fs from 'node:fs'
 import path from 'node:path'
-import { DataTypes, Model, ModelAttributeColumnOptions, Op, Sequelize } from 'sequelize'
-import { ColumnOption, ColumnOptionType, DatabaseArray, DatabaseClassInstance, DatabaseClassStatic, DatabaseReturn, DatabaseType, Dialect } from '../types'
+import { DatabaseArray, DatabaseClassInstance, DatabaseReturn, DatabaseType, DataTypes, Dialect } from '../types'
 import { DbBase } from './base'
 
 const dialect = Dialect.Sqlite
 
-const sequelize = new Sequelize({
-  storage: path.join(dir.DataDir, 'database', 'sqlite3.db'), dialect, logging: false
-})
+let sharedDb: Database | null = null
+
+function getSharedDatabase (): Database {
+  if (!sharedDb) {
+    const dbPath = path.join(dir.DataDir, 'database', 'sqlite3.db')
+    sharedDb = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+      if (err) {
+        logger.error('Failed to open database:', err)
+      }
+    })
+  }
+  return sharedDb
+}
 
 export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> extends DbBase<T, D> implements DatabaseClassInstance<T, D> {
+  declare model: Database
+
   dialect: Dialect = dialect
+  description: string = 'SQLite3数据库'
 
   async check (): Promise<boolean> {
     try {
-      await sequelize.authenticate()
-      return true
+      const db = getSharedDatabase()
+      return await new Promise<boolean>((resolve) => {
+        db.get('SELECT 1', (err) => {
+          if (err) {
+            logger.error(err)
+            resolve(false)
+          } else {
+            resolve(true)
+          }
+        })
+      })
     } catch (error) {
       logger.error(error)
       return false
     }
   }
 
-  async init (DataDir: string, modelName: string, modelSchemaDefine: DefineDataTypeObject<T>, type: D, primaryKey?: keyof T): Promise<DatabaseClassInstance<T, D>> {
-    this.initBase(DataDir, modelName, modelSchemaDefine, type, primaryKey)
+  switchProp (define: DefineDataTypeObject<any, any> | DefineDataTypeArray<any> | DefineDataTypeOArray<any> | DefineDataTypeValue<any>) {
+    const result: { type: DataTypes, value: any } = { type: DataTypes.TEXT, value: null }
+
+    switch (define.prop) {
+      case DefineDataPropEnum.Value: {
+        switch (define.type) {
+          case 'number':
+            result.type = DataTypes.INTEGER
+            break
+          case 'boolean':
+            result.type = DataTypes.BOOLEAN
+            break
+          case 'text':
+          case 'string':
+          default:
+            result.type = DataTypes.TEXT
+            break
+        }
+        result.value = typeof define.default === 'function' ? null : define.default
+        break
+      }
+      case DefineDataPropEnum.Array:
+      case DefineDataPropEnum.Object:
+      case DefineDataPropEnum.OArray: {
+        result.type = DataTypes.TEXT
+        result.value = JSON.stringify(define.default ?? (define.prop === DefineDataPropEnum.Array ? [] : {}))
+        break
+      }
+    }
+
+    return result
+  }
+
+  /**
+   * 将从数据库读取的数据转换为正确的类型
+   * @param row 数据库行数据
+   */
+  private parseRowData (row: any): void {
+    lodash.forEach(this.modelSchemaDefine.default, (define, key) => {
+      switch (define.prop) {
+        case DefineDataPropEnum.Array:
+          try {
+            const parsed = JSON.parse(row[key])
+            row[key] = new DatabaseArray(Array.isArray(parsed) ? parsed : [])
+          } catch (e) {
+            row[key] = new DatabaseArray(define.default)
+          }
+          break
+        case DefineDataPropEnum.Object:
+        case DefineDataPropEnum.OArray:
+          try {
+            row[key] = JSON.parse(row[key])
+          } catch (e) {
+            row[key] = define.default ?? {}
+          }
+          break
+      }
+    })
+  }
+
+  async init (DataDir: string, modelName: string, modelSchemaDefine: DefineDataTypeObject<T, 1>, type: D): Promise<DatabaseClassInstance<T, D>> {
+    this.initBase(DataDir, modelName, modelSchemaDefine, type)
 
     if (this.databaseType === DatabaseType.Db) {
-      const modelSchemaOptions = this.getModelSchemaOptions()
+      this.model = getSharedDatabase()
 
-      const modelSchema = modelSchemaOptions.reduce((acc, cur) => {
-        acc[cur.key] = cur.Option
-        return acc
-      }, {} as Record<keyof T, ModelAttributeColumnOptions<Model>>)
+      // 直接从 modelSchemaDefine 创建表结构
+      const columns: string[] = []
 
-      this.model = sequelize.define(this.modelName, modelSchema, {
-        timestamps: false, freezeTableName: true
+      for (const key in this.modelSchemaDefine.default) {
+        const define = this.modelSchemaDefine.default[key]
+        let constraints = ''
+        const { type: sqlType, value: defaultValue } = this.switchProp(define)
+
+        // 判断是否为主键
+        const isPrimaryKey = key === this.primaryKey
+
+        // 设置约束
+        if (isPrimaryKey) {
+          constraints = 'PRIMARY KEY NOT NULL'
+        }
+
+        // 设置默认值
+        if (defaultValue !== undefined && defaultValue !== null && !isPrimaryKey) {
+          const defaultVal = typeof defaultValue === 'string'
+            ? `'${defaultValue.replace(/'/g, "''")}'`
+            : defaultValue
+          constraints += ` DEFAULT ${defaultVal}`.trim()
+        }
+
+        columns.push(`${key} ${sqlType} ${constraints}`.trim())
+      }
+
+      const createTableSQL = `CREATE TABLE IF NOT EXISTS ${this.modelName} (${columns.join(', ')})`
+
+      await new Promise<void>((resolve, reject) => {
+        this.model.run(createTableSQL, (err) => {
+          if (err) {
+            logger.error('Failed to create table:', err)
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
       })
-      await this.model.sync()
 
-      const queryInterface = sequelize.getQueryInterface()
-      const tableDescription = await queryInterface.describeTable(this.modelName)
+      // 检查并添加缺失的列
+      const tableInfo = await new Promise<any[]>((resolve, reject) => {
+        this.model.all(`PRAGMA table_info(${this.modelName})`, (err, rows) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(rows || [])
+          }
+        })
+      })
 
-      for (const Schema of modelSchemaOptions) {
-        const { key, Option } = Schema
-        const _key = key as string
+      const existingColumns = new Set(tableInfo.map((col: any) => col.name))
 
-        if (!tableDescription[_key]) {
-          await queryInterface.addColumn(this.modelName, _key, Option)
-          if (typeof Option === 'string') continue
+      for (const key in this.modelSchemaDefine.default) {
+        const define = this.modelSchemaDefine.default[key]
 
-          const defaultValue = Option.defaultValue
-          if (defaultValue !== undefined) {
-            await this.model.update({ [_key]: defaultValue }, { where: {} })
+        if (!existingColumns.has(key) && key !== this.primaryKey) {
+          const { type: sqlType, value: defaultValue } = this.switchProp(define)
+
+          const alterSQL = `ALTER TABLE ${this.modelName} ADD COLUMN ${key} ${sqlType}`
+
+          await new Promise<void>((resolve, reject) => {
+            this.model.run(alterSQL, (err) => {
+              if (err) {
+                logger.error(`Failed to add column ${key}:`, err)
+                reject(err)
+              } else {
+                resolve()
+              }
+            })
+          })
+
+          // 设置默认值
+          if (defaultValue !== undefined && defaultValue !== null) {
+            const updateSQL = `UPDATE ${this.modelName} SET ${key} = ?`
+            await new Promise<void>((resolve, reject) => {
+              this.model.run(updateSQL, [defaultValue], (err) => {
+                if (err) {
+                  logger.error(`Failed to set default value for ${key}:`, err)
+                  reject(err)
+                } else {
+                  resolve()
+                }
+              })
+            })
           }
         }
       }
@@ -102,17 +246,55 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
         return this.readSync(path, pk) as DatabaseReturn<T>[D]
       }
     } else {
-      let result = await this.model!.findByPk(pk)
+      const selectSQL = `SELECT * FROM ${this.modelName} WHERE ${this.primaryKey} = ?`
+
+      let result = await new Promise<any>((resolve, reject) => {
+        this.model.get(selectSQL, [pk], (err, row) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(row)
+          }
+        })
+      })
+
       if (!result && create) {
-        result = await this.model!.create(this.SchemaDefault(pk))
+        const data: any = this.SchemaDefault(pk)
+
+        const keys = Object.keys(data)
+        const placeholders = keys.map(() => '?').join(', ')
+
+        for (const key in this.modelSchemaDefine.default) {
+          const define = this.modelSchemaDefine.default[key]
+          if (define.prop === DefineDataPropEnum.Array || define.prop === DefineDataPropEnum.Object || define.prop === DefineDataPropEnum.OArray) {
+            data[key] = JSON.stringify(data[key])
+          }
+        }
+
+        const insertSQL = `INSERT INTO ${this.modelName} (${keys.join(', ')}) VALUES (${placeholders})`
+
+        await new Promise<void>((resolve, reject) => {
+          this.model.run(insertSQL, Object.values(data), (err) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          })
+        })
+
+        result = data
       }
+
       if (!result) return undefined
 
+      this.parseRowData(result)
+
       return {
-        ...result.toJSON<T>(),
-        save: this.saveSql(result, pk),
-        destroy: () => this.destroySql(pk)
-      }
+        ...result,
+        save: this.saveSqlNative(pk),
+        destroy: () => this.destroy(pk)
+      } as DatabaseReturn<T>[D]
     }
   }
 
@@ -132,17 +314,28 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
 
       return result
     } else {
-      const result = await this.model!.findAll({
-        where: {
-          [this.model!.primaryKeyAttribute]: pks
-        }
+      if (pks.length === 0) return []
+
+      const placeholders = pks.map(() => '?').join(', ')
+      const selectSQL = `SELECT * FROM ${this.modelName} WHERE ${this.primaryKey} IN (${placeholders})`
+
+      const rows = await new Promise<any[]>((resolve, reject) => {
+        this.model.all(selectSQL, pks, (err, rows) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(rows || [])
+          }
+        })
       })
 
-      return result.map((item) => ({
-        ...item.toJSON<T>(),
-        save: this.saveSql(item, item[this.model!.primaryKeyAttribute as keyof Model<any, any>]),
-        destroy: () => this.destroySql(item[this.model!.primaryKeyAttribute as keyof Model<any, any>])
-      }))
+      rows.forEach((row) => this.parseRowData(row))
+
+      return rows.map((item) => ({
+        ...item,
+        save: this.saveSqlNative(item[this.primaryKey]),
+        destroy: () => this.destroy(item[this.primaryKey])
+      })) as DatabaseReturn<T>[D][]
     }
   }
 
@@ -175,107 +368,90 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
 
       return result
     } else {
-      const whereClause = excludePks && excludePks.length > 0
-        ? { [this.model!.primaryKeyAttribute]: { [Op.notIn]: excludePks } }
-        : {}
+      let selectSQL = `SELECT * FROM ${this.modelName}`
+      const params: string[] = []
 
-      const result = await this.model!.findAll({ where: whereClause })
+      if (excludePks && excludePks.length > 0) {
+        const placeholders = excludePks.map(() => '?').join(', ')
+        selectSQL += ` WHERE ${this.primaryKey} NOT IN (${placeholders})`
+        params.push(...excludePks)
+      }
 
-      return result.map((item) => ({
-        ...item.toJSON<T>(),
-        save: this.saveSql(item, item[this.model!.primaryKeyAttribute as keyof Model<any, any>]),
-        destroy: () => this.destroySql(item[this.model!.primaryKeyAttribute as keyof Model<any, any>])
-      }))
+      const rows = await new Promise<any[]>((resolve, reject) => {
+        this.model.all(selectSQL, params, (err, rows) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(rows || [])
+          }
+        })
+      })
+
+      rows.forEach((row) => this.parseRowData(row))
+
+      return rows.map((item) => ({
+        ...item,
+        save: this.saveSqlNative(item[this.primaryKey]),
+        destroy: () => this.destroy(item[this.primaryKey])
+      })) as DatabaseReturn<T>[D][]
     }
   }
 
   async destroy (pk: string): Promise<boolean> {
     if (this.databaseType !== DatabaseType.Db) {
       rmSync(this.userPath(pk), { recursive: true })
-
       return true
     } else {
-      const destroyed = await this.model!.destroy({
-        where: { [this.model!.primaryKeyAttribute]: pk }
-      })
+      const deleteSQL = `DELETE FROM ${this.modelName} WHERE ${this.primaryKey} = ?`
 
-      return destroyed > 0
+      return await new Promise<boolean>((resolve) => {
+        this.model.run(deleteSQL, [pk], function (err) {
+          if (err) {
+            logger.error(err)
+            resolve(false)
+          } else {
+            resolve(this.changes > 0)
+          }
+        })
+      })
+    }
+  }
+
+  private saveSqlNative (pk: string): (data: Partial<T>) => Promise<boolean> {
+    return async (data: Partial<T>) => {
+      const updateData = { ...data }
+      delete updateData[this.primaryKey]
+
+      const keys = Object.keys(updateData).filter(key => updateData[key as keyof T] !== undefined && updateData[key as keyof T] !== null)
+
+      if (keys.length > 0) {
+        const setClause = keys.map(key => `${key} = ?`).join(', ')
+        const values = keys.map(key => {
+          const value = updateData[key as keyof T]
+          const define = this.modelSchemaDefine.default[key]
+
+          // 如果是 Array、Object 或 OArray 类型，需要序列化为 JSON
+          if (define && (define.prop === DefineDataPropEnum.Array || define.prop === DefineDataPropEnum.Object || define.prop === DefineDataPropEnum.OArray)) {
+            return JSON.stringify(value)
+          }
+
+          return value
+        })
+
+        const updateSQL = `UPDATE ${this.modelName} SET ${setClause} WHERE ${this.primaryKey} = ?`
+
+        await new Promise<void>((resolve, reject) => {
+          this.model.run(updateSQL, [...values, pk], (err) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          })
+        })
+      }
+
+      return true
     }
   }
 }
-
-export const Sqlite3Static = new class Sqlite3Static implements DatabaseClassStatic {
-  dialect = dialect
-  description = '插件默认数据库'
-
-  Column = <T, K extends string> (
-    key: K, type: keyof typeof DataTypes, def: T, option?: Partial<ModelAttributeColumnOptions<Model>>
-  ): ColumnOption<ColumnOptionType.Normal, K> => (
-    {
-      key,
-      type: ColumnOptionType.Normal,
-      Option: {
-        type: DataTypes[type],
-        defaultValue: def,
-        ...option
-      }
-    }
-  )
-
-  ArrayColumn = <T, K extends string> (
-    key: K, split: boolean, def: T[] = []
-  ): ColumnOption<ColumnOptionType.Array, K> => (
-    {
-      key,
-      type: ColumnOptionType.Array,
-      Option: {
-        type: DataTypes.STRING,
-        defaultValue: def.join(','),
-        get (): DatabaseArray<T> {
-          let data = this.getDataValue(key)
-          if (split) {
-            return new DatabaseArray<T>(data.split(',').filter(Boolean))
-          } else {
-            try {
-              data = JSON.parse(data) || []
-            } catch (err) {
-              logger.error(err)
-              data = []
-            }
-
-            return new DatabaseArray<T>(data)
-          }
-        },
-        set (data: DatabaseArray<T>) {
-          this.setDataValue(key, (data || []).join(','))
-        }
-      }
-    }
-  )
-
-  ObjectColumn = <T, K extends string> (
-    key: K, def: T = {} as T
-  ): ColumnOption<ColumnOptionType.Json, K> => (
-    {
-      key,
-      type: ColumnOptionType.Json,
-      Option: {
-        type: DataTypes.STRING,
-        defaultValue: JSON.stringify(def),
-        get (this: Model): T {
-          let data = this.getDataValue(key)
-          try {
-            data = JSON.parse(data) || def
-          } catch (err) {
-            logger.error(err)
-            data = def
-          }
-          return data
-        },
-        set (this: Model, data: T) {
-          this.setDataValue(key, JSON.stringify(data))
-        }
-      }
-    }
-  )
-}()
