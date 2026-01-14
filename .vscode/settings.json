@@ -11,6 +11,8 @@
   },
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
+    "development.env": "development.env, .env",
+    "release-please-config.json": "release-please-config.json, .release-please-manifest.json",
     "tsconfig.json": "tsconfig.*.json, env.d.ts",
     "package.json": "package-lock.json, pnpm*, .yarnrc*, yarn*, .eslint*, eslint*, .prettier*, prettier*, .editorconfig, CHANGELOG.md, CODE_OF_CONDUCT.md"
   },

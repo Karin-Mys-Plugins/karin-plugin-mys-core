@@ -20,12 +20,12 @@ export const enum DatabaseType {
 }
 
 export const enum DataTypes {
-  STRING = "STRING",
-  TEXT = "TEXT",
-  BIGINT = "BIGINT",
-  INTEGER = "INTEGER",
-  BOOLEAN = "BOOLEAN",
-  JSONB = "JSONB",
+  STRING = 'STRING',
+  TEXT = 'TEXT',
+  BIGINT = 'BIGINT',
+  INTEGER = 'INTEGER',
+  BOOLEAN = 'BOOLEAN',
+  JSONB = 'JSONB',
 }
 
 export interface DatabaseReturn<T> {
