@@ -1,9 +1,9 @@
 import { karinPathBase, requireFileSync } from 'node-karin'
 import path from 'node:path'
-import { URL, fileURLToPath } from 'node:url'
+import { fileURLToPath } from 'node:url'
 
 /** 插件包绝对路径 */
-const pluginDir = fileURLToPath(new URL('../', import.meta.url))
+const pluginDir = path.resolve(fileURLToPath(import.meta.url), '../../')
 /** 插件包目录名称 */
 const pluginName = path.basename(pluginDir)
 /** package.json */
