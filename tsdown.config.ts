@@ -24,14 +24,14 @@ export default defineConfig({
   platform: 'node', // 目标平台
   outputOptions: {
     // 减少 chunk 文件的生成
-    chunkFileNames: '_chunks/[name]-[hash].js', // 将所有 chunk 放入 _chunks 文件夹
+    chunkFileNames: '[name]-[hash].js', // 将所有 chunk 放入 _chunks 文件夹
     // 控制代码分割策略,减少 chunk 数量
     manualChunks (id) {
       // 将 node_modules 中的代码都打包到一个 vendor chunk 中
       if (id.includes('node_modules')) {
         return 'vendor'
       }
-      // 不进行其他分块,让 rolldown 自动处理
+      return 'chunks'
     },
   },
 })
