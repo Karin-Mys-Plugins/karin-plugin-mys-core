@@ -54,9 +54,6 @@
     }
   },
   "main": "lib/index.js",
-  "dependencies": {
-    "react": "^19.2.0"
-  },
   "devDependencies": {
     "@karinjs/plugin-puppeteer": "^1.1.2",
     "@types/express": "^5.0.1",
@@ -72,6 +69,7 @@
     "eslint": "^9.39.2",
     "neostandard": "^0.11.9",
     "qrcode": "^1.5.4",
+    "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwindcss": "^3.4.17",
     "tsdown": "^0.18.2",
@@ -105,8 +103,7 @@
     "!lib/app.js",
     "!lib/app.d.ts",
     "!lib/index.d.ts",
-    "!lib/web.config.d.ts",
-    "!lib/apps/**/*.d.ts"
+    "!lib/web.config.d.ts"
   ],
   "publishConfig": {
     "access": "public",
