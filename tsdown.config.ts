@@ -18,7 +18,7 @@ export default defineConfig({
   treeshake: true, // 树摇优化
   minify: false, // 压缩代码
   external: [
-    'node-karin'
+    /^node-karin/
   ],
   shims: true,
   platform: 'node', // 目标平台
