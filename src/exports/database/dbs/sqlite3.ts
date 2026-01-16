@@ -139,10 +139,10 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
           constraints += ` DEFAULT ${defaultVal}`.trim()
         }
 
-        columns.push(`${key} ${sqlType} ${constraints}`.trim())
+        columns.push(`\`${key}\` ${sqlType} ${constraints}`.trim())
       }
 
-      const createTableSQL = `CREATE TABLE IF NOT EXISTS ${this.modelName} (${columns.join(', ')})`
+      const createTableSQL = `CREATE TABLE IF NOT EXISTS \`${this.modelName}\` (${columns.join(', ')})`
 
       await new Promise<void>((resolve, reject) => {
         this.model.run(createTableSQL, (err) => {
@@ -157,7 +157,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
 
       // 检查并添加缺失的列
       const tableInfo = await new Promise<any[]>((resolve, reject) => {
-        this.model.all(`PRAGMA table_info(${this.modelName})`, (err, rows) => {
+        this.model.all(`PRAGMA table_info(\`${this.modelName}\`)`, (err, rows) => {
           if (err) {
             reject(err)
           } else {
@@ -174,7 +174,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
         if (!existingColumns.has(key) && key !== this.primaryKey) {
           const { type: sqlType, value: defaultValue } = this.switchProp(define)
 
-          const alterSQL = `ALTER TABLE ${this.modelName} ADD COLUMN ${key} ${sqlType}`
+          const alterSQL = `ALTER TABLE \`${this.modelName}\` ADD COLUMN \`${key}\` ${sqlType}`
 
           await new Promise<void>((resolve, reject) => {
             this.model.run(alterSQL, (err) => {
@@ -189,7 +189,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
 
           // 设置默认值
           if (defaultValue !== undefined && defaultValue !== null) {
-            const updateSQL = `UPDATE ${this.modelName} SET ${key} = ?`
+            const updateSQL = `UPDATE \`${this.modelName}\` SET \`${key}\` = ?`
             await new Promise<void>((resolve, reject) => {
               this.model.run(updateSQL, [defaultValue], (err) => {
                 if (err) {
@@ -246,7 +246,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
         return this.readSync(path, pk)
       }
     } else {
-      const selectSQL = `SELECT * FROM ${this.modelName} WHERE ${this.primaryKey} = ?`
+      const selectSQL = `SELECT * FROM \`${this.modelName}\` WHERE \`${this.primaryKey}\` = ?`
 
       let result = await new Promise<any>((resolve, reject) => {
         this.model.get(selectSQL, [pk], (err, row) => {
@@ -271,7 +271,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
           }
         }
 
-        const insertSQL = `INSERT INTO ${this.modelName} (${keys.join(', ')}) VALUES (${placeholders})`
+        const insertSQL = `INSERT INTO \`${this.modelName}\` (${keys.map(k => `\`${k}\``).join(', ')}) VALUES (${placeholders})`
 
         await new Promise<void>((resolve, reject) => {
           this.model.run(insertSQL, Object.values(data), (err) => {
@@ -317,7 +317,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
       if (pks.length === 0) return []
 
       const placeholders = pks.map(() => '?').join(', ')
-      const selectSQL = `SELECT * FROM ${this.modelName} WHERE ${this.primaryKey} IN (${placeholders})`
+      const selectSQL = `SELECT * FROM \`${this.modelName}\` WHERE \`${this.primaryKey}\` IN (${placeholders})`
 
       const rows = await new Promise<any[]>((resolve, reject) => {
         this.model.all(selectSQL, pks, (err, rows) => {
@@ -368,12 +368,12 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
 
       return result
     } else {
-      let selectSQL = `SELECT * FROM ${this.modelName}`
+      let selectSQL = `SELECT * FROM \`${this.modelName}\``
       const params: string[] = []
 
       if (excludePks && excludePks.length > 0) {
         const placeholders = excludePks.map(() => '?').join(', ')
-        selectSQL += ` WHERE ${this.primaryKey} NOT IN (${placeholders})`
+        selectSQL += ` WHERE \`${this.primaryKey}\` NOT IN (${placeholders})`
         params.push(...excludePks)
       }
 
@@ -402,7 +402,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
       rmSync(this.userPath(pk), { recursive: true })
       return true
     } else {
-      const deleteSQL = `DELETE FROM ${this.modelName} WHERE ${this.primaryKey} = ?`
+      const deleteSQL = `DELETE FROM \`${this.modelName}\` WHERE \`${this.primaryKey}\` = ?`
 
       return await new Promise<boolean>((resolve) => {
         this.model.run(deleteSQL, [pk], function (err) {
@@ -425,7 +425,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
       const keys = Object.keys(updateData).filter(key => updateData[key as keyof T] !== undefined && updateData[key as keyof T] !== null)
 
       if (keys.length > 0) {
-        const setClause = keys.map(key => `${key} = ?`).join(', ')
+        const setClause = keys.map(key => `\`${key}\` = ?`).join(', ')
         const values = keys.map(key => {
           const value = updateData[key as keyof T]
           const define = this.modelSchemaDefine.default[key]
@@ -438,7 +438,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
           return value
         })
 
-        const updateSQL = `UPDATE ${this.modelName} SET ${setClause} WHERE ${this.primaryKey} = ?`
+        const updateSQL = `UPDATE \`${this.modelName}\` SET ${setClause} WHERE \`${this.primaryKey}\` = ?`
 
         await new Promise<void>((resolve, reject) => {
           this.model.run(updateSQL, [...values, pk], (err) => {
@@ -452,7 +452,7 @@ export class Sqlite3<T extends Record<string, any>, D extends DatabaseType> exte
       }
 
       if (res) {
-        const selectSQL = `SELECT * FROM ${this.modelName} WHERE ${this.primaryKey} = ?`
+        const selectSQL = `SELECT * FROM \`${this.modelName}\` WHERE \`${this.primaryKey}\` = ?`
 
         const result = await new Promise<any>((resolve, reject) => {
           this.model.get(selectSQL, [pk], (err, row) => {
