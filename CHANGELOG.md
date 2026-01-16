@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.2](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.1.1...v1.1.2) (2026-01-16)
+
+
+### 🐛 错误修复
+
+* node-karin 及其子路径的导入标记为外部依赖，不参与打包 ([114447b](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/114447b9d53cffb88036803e0e01114e69b1b48f))
+* react ([b3b6179](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/b3b61793bf3cf0143b7288a02749d56089c6eca0))
+* SQLite 不允许在表名和列名中使用连字符（-） ([210b1f4](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/210b1f4d81d658517509aed29b350d8270efd72e))
+* 优化数据库 ([90bee40](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/90bee40a2d0374dc17d030f3c8a9db55c3dc7336))
+* 打包 ([a9472db](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/a9472dbec26341d1b3a09cb919963a8ac9b2a362))
+* 打包 ([43fbf05](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/43fbf05861cf6d02eca074df7b28f7235284f065))
+* 插件包绝对路径错误 ([aed98cc](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/commit/aed98cc3e09ea66a1809406b1ff1929a34cbd2eb))
+
 ## [1.1.1](https://github.com/Karin-Mys-Plugins/karin-plugin-mys-core/compare/v1.1.0...v1.1.1) (2026-01-14)
 
 
